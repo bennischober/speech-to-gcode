@@ -1,7 +1,8 @@
 import dash
 from dash import html, dcc
 import dash_bootstrap_components as dbc
-from components.speech_to_text import get_speech_to_text_component
+from components.speech_to_text_component import get_speech_to_text_component
+from components.speech_to_text.callbacks import get_callbacks as get_speech_to_text_callbacks
 from components.stable_diffusion import get_stable_diffusion_component
 from components.image_preprocessing import get_image_preprocessing_component
 from components.image_to_gcode import get_image_to_gcode_component
@@ -76,5 +77,8 @@ app.layout = html.Div(
     }
 )
 
+# set callbacks for speech_to_text component
+get_speech_to_text_callbacks(app)
+
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run() # debug=True
