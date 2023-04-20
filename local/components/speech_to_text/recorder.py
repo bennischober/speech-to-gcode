@@ -70,5 +70,4 @@ class Recorder:
 
         self.log.info("All threads stopped")
 
-
 recorder = Recorder()

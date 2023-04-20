@@ -1,8 +1,8 @@
 import dash
-from dash import html, dcc
+from dash import html, dcc, Input
 import dash_bootstrap_components as dbc
 from components.speech_to_text_component import get_speech_to_text_component
-from components.speech_to_text.callbacks import get_callbacks as get_speech_to_text_callbacks
+# from components.speech_to_text.callbacks import get_callbacks as get_speech_to_text_callbacks
 from components.stable_diffusion import get_stable_diffusion_component
 from components.image_preprocessing import get_image_preprocessing_component
 from components.image_to_gcode import get_image_to_gcode_component
@@ -86,4 +86,4 @@ app.layout = html.Div(
 register_callback(app)
 
 if __name__ == '__main__':
-    app.run(debug=True) # debug=True
+    app.run(debug=True) # Maximale Länge der URL auf 1 MB setzen
