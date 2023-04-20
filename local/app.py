@@ -6,6 +6,8 @@ from components.speech_to_text.callbacks import get_callbacks as get_speech_to_t
 from components.stable_diffusion import get_stable_diffusion_component
 from components.image_preprocessing import get_image_preprocessing_component
 from components.image_to_gcode import get_image_to_gcode_component
+from utils.callback_handler import register_callback
+from utils.app_state import set_state
 
 # Load Icons
 html.I(className='fas fa-microphone')
@@ -16,6 +18,9 @@ external_stylesheets = [
 ]
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+set_state("debug", True)
+set_state("skip_recorder", True)
 
 # Definieren Sie die Farben für den Farbverlauf
 colors = {
@@ -77,8 +82,8 @@ app.layout = html.Div(
     }
 )
 
-# set callbacks for speech_to_text component
-get_speech_to_text_callbacks(app)
+# set callbacks for all components
+register_callback(app)
 
 if __name__ == '__main__':
-    app.run() # debug=True
+    app.run(debug=True) # debug=True
