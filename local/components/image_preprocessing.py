@@ -2,6 +2,7 @@ import dash_bootstrap_components as dbc
 from dash import html, Input, Output, callback
 import cv2
 import base64
+import os
 
 def get_image_preprocessing_component():
     return dbc.Card(
@@ -55,7 +56,7 @@ def get_image_preprocessing_component():
           Output('dilated-image', 'src'),
           Input('load_image', 'n_clicks'))
 def process_image(n_clicks):
-    origial = cv2.imread("/Users/lig/git/hsKempten/speech-to-gcode/local/components/image_preprocessing/elefant.jpeg")
+    origial = cv2.imread(os.path.join(os.path.dirname(__file__), "./image_preprocessing/elefant.jpeg"))
     _, origial_encoded = cv2.imencode('.png', origial)
     original_base64 = base64.b64encode(origial_encoded).decode('utf-8')
 
