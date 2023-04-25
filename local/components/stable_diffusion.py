@@ -12,7 +12,7 @@ def get_stable_diffusion_component():
                 dbc.Container([
                     dbc.Row([
                         dbc.Col([
-                            html.H4('Bild 1', style={"text-align": "center"}),
+                            html.H4('Bild 1', style={"textAlign": "center"}),
                             dcc.Loading(
                                 dbc.Button(
                                     html.Img(id='stable_diff_img_1', className='img-thumbnail', style={"display": "block", "margin": "auto"}), 
@@ -20,7 +20,7 @@ def get_stable_diffusion_component():
                             )
                         ]),
                         dbc.Col([
-                            html.H4('Bild 2', style={"text-align": "center"}),
+                            html.H4('Bild 2', style={"textAlign": "center"}),
                             dcc.Loading(
                                 dbc.Button(
                                     html.Img(id='stable_diff_img_2', className='img-thumbnail', style={"display": "block", "margin": "auto"}), 
@@ -28,7 +28,7 @@ def get_stable_diffusion_component():
                             )
                         ]),
                         dbc.Col([
-                            html.H4('Bild 3', style={"text-align": "center"}),
+                            html.H4('Bild 3', style={"textAlign": "center"}),
                             dcc.Loading(
                                 dbc.Button(
                                     html.Img(id='stable_diff_img_3', className='img-thumbnail', style={"display": "block", "margin": "auto"}), 
@@ -36,7 +36,7 @@ def get_stable_diffusion_component():
                             )
                         ]),
                         dbc.Col([
-                            html.H4('Bild 4', style={"text-align": "center"}),
+                            html.H4('Bild 4', style={"textAlign": "center"}),
                             dcc.Loading(
                                 dbc.Button(
                                     html.Img(id='stable_diff_img_4', className='img-thumbnail', style={"display": "block", "margin": "auto"}), 
@@ -54,7 +54,7 @@ def get_stable_diffusion_component():
             ],
             className='mb-4',
             style={
-                'box-shadow': '0 4px 6px rgba(0, 0, 0, 0.1)'
+                'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)'
             }
         )
 

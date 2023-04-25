@@ -12,23 +12,23 @@ def get_image_preprocessing_component():
                 # Hier fügen Sie Ihre dritte Komponente hinzu
                 dbc.Row([
                     dbc.Col([
-                        html.H4('Eingabe', style={"text-align": "center"}),
+                        html.H4('Eingabe', style={"textAlign": "center"}),
                         html.Img(id='origial-image', className='img-thumbnail', style={"display": "block", "margin": "auto"})
                     ]),
                     dbc.Col([
-                        html.H4('Graustufenbild', style={"text-align": "center"}),
+                        html.H4('Graustufenbild', style={"textAlign": "center"}),
                         html.Img(id='gray-image', className='img-thumbnail', style={"display": "block", "margin": "auto"})
                     ]),
                     dbc.Col([
-                        html.H4('Blurred-Bild', style={"text-align": "center"}),
+                        html.H4('Blurred-Bild', style={"textAlign": "center"}),
                         html.Img(id='blurred-image', className='img-thumbnail', style={"display": "block", "margin": "auto"})
                     ]),
                     dbc.Col([
-                        html.H4('Kantenbild', style={"text-align": "center"}),
+                        html.H4('Kantenbild', style={"textAlign": "center"}),
                         html.Img(id='edges-image', className='img-thumbnail', style={"display": "block", "margin": "auto"})
                     ]),
                     dbc.Col([
-                        html.H4('GCODE-Bild', style={"text-align": "center"}),
+                        html.H4('GCODE-Bild', style={"textAlign": "center"}),
                         html.Img(id='dilated-image', className='img-thumbnail', style={"display": "block", "margin": "auto"})
                     ]),
                 ], className='m-4', style={'padding': '0px 5px 5px 0px'}),
@@ -40,7 +40,7 @@ def get_image_preprocessing_component():
             ],
             className='mb-4',
             style={
-                'box-shadow': '0 4px 6px rgba(0, 0, 0, 0.1)'
+                'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)'
             }
         )
 

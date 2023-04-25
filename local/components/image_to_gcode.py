@@ -10,6 +10,6 @@ def get_image_to_gcode_component():
                     ],
                     className='mb-4',
                     style={
-                        'box-shadow': '0 4px 6px rgba(0, 0, 0, 0.1)'
+                        'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)'
                     }
                 )
