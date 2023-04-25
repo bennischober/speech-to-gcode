@@ -1,10 +1,12 @@
 import json
+import os
 import queue
 import threading
 from vosk import Model, KaldiRecognizer
 import utils.logger as logger
 import time
 import sounddevice as sd
+
 
 class Recorder:
     def __init__(self, channels=1, format="int16"):
@@ -19,11 +21,15 @@ class Recorder:
         self.recording = False
         self.log = logger.get_logger(__name__)
 
-    def load_model(self, model_name = "vosk-model-de-0.21"):
+    def load_model(self, model_name="vosk-model-small-de-0.15"):
         load_start = time.time()
         self.log.info("Loading model")
 
-        self.model = Model(model_name=model_name)
+        try:
+            self.model = Model(model_name=model_name)
+        except Exception as e:
+            self.log.error(e)
+            return
         self.recognizer = KaldiRecognizer(self.model, self.rate)
         self.recognizer.SetWords(False)
 
@@ -65,9 +71,11 @@ class Recorder:
 
         for th in threading.enumerate():
             if th.is_alive() and th.name == "start_recording":
-                self.log.info("Found thread that is alive: {}. Trying to join.".format(th.name))
-                th.join()
+                self.log.info(
+                    "Found thread that is alive: {}. Trying to join.".format(th.name))
+                # th.join()
 
         self.log.info("All threads stopped")
+
 
 recorder = Recorder()
