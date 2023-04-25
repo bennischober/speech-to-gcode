@@ -77,8 +77,8 @@ def generate_diff_images(n_clicks):
     # prompt: realistic digital portrait, global illumination, shot at 8k resolution, highly detailed, photo realistic, masterpiece
     # negative_prompt: bad art, low detail, plain background, grainy, low quality, disfigured, out of frame, bad proportions, distortion, deformations
     data = {
-        "prompt": "Eine Katze mit Piratenhut",
-        "negative_prompt": "",
+        "prompt": "Luxus Hotel",
+        "negative_prompt": "Personen, Text",
         "num_images_per_prompt": 4
     }
 
