@@ -42,16 +42,16 @@ def get_speech_to_text_component(skip_recorder: bool = True, debug: bool = True)
         return transcript
 
     @callback(
-        Output("output", "children"),
-        Output("text-input", "value"),
+        Output("diffusion_prompt", "data"),
+        State("diffusion_prompt", "data"),
         Input("text-input", "n_submit"),
-        State("text-input", "value"),
-        prevent_initial_call=True,
+        State("text-input", "value")
     )
-    def handle_text_input(n_submit, text):
-        if n_submit:
-            return f"You submitted: {text}", ""
-        return dash.no_update, dash.no_update
+    def handle_text_input(diffusion_prompt_old, n_submit, diffusion_prompt):
+        if n_submit is None:
+            return dash.no_update
+        print('diffusion_prompt_old', diffusion_prompt_old, 'n_submit', n_submit, 'diffusion_prompt', diffusion_prompt)
+        return diffusion_prompt
 
     @callback(
         Output("microphone-icon", "className"),
@@ -137,6 +137,7 @@ def get_speech_to_text_component(skip_recorder: bool = True, debug: bool = True)
                     className="mt-5",
                 ),
             ]),
+            dcc.Store('diffusion_prompt')
         ],
         className='mb-4',
         style={

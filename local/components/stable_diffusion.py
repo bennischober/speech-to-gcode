@@ -64,9 +64,10 @@ def get_stable_diffusion_component():
     Output('stable_diff_img_2', 'src'),
     Output('stable_diff_img_3', 'src'),
     Output('stable_diff_img_4', 'src'),
+    Input('diffusion_prompt', 'data'),
     Input('generate_diff_imges', 'n_clicks')
 )
-def generate_diff_images(n_clicks):
+def generate_diff_images(diffusion_prompt, n_clicks):
     if n_clicks is None:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
@@ -76,9 +77,10 @@ def generate_diff_images(n_clicks):
     # Define the prompt data
     # prompt: realistic digital portrait, global illumination, shot at 8k resolution, highly detailed, photo realistic, masterpiece
     # negative_prompt: bad art, low detail, plain background, grainy, low quality, disfigured, out of frame, bad proportions, distortion, deformations
+    print(diffusion_prompt)
     data = {
-        "prompt": "Luxus Hotel",
-        "negative_prompt": "Personen, Text",
+        "prompt": diffusion_prompt,
+        "negative_prompt": "", # bad art, low detail, plain background, grainy, low quality, disfigured, out of frame, bad proportions, distortion, deformations, missing limbs, cropped, badly framed, detailed background, background
         "num_images_per_prompt": 4
     }
 
