@@ -5,12 +5,14 @@ from components.speech_to_text_component import get_speech_to_text_component
 from components.stable_diffusion import get_stable_diffusion_component
 from components.image_preprocessing import get_image_preprocessing_component
 from components.image_to_gcode import get_image_to_gcode_component
+from components.buttons import FuturisticButtons
 
 # Load Icons
 html.I(className='fas fa-microphone')
 
 external_stylesheets = [
     dbc.themes.DARKLY,
+    dbc.icons.BOOTSTRAP,
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
     'style.css'
 ]
@@ -22,7 +24,9 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_ca
 colors = {
     'background': '#1a2a6c',
     'background2': '#b21f1f',
-    'text': '#ffffff'
+    'text': '#ffffff',
+    'blue': '#000080',
+    'red': '#8B0000',
 }
 
 # Layout der App
@@ -64,9 +68,10 @@ app.layout = html.Div(
                 get_stable_diffusion_component(),
                 get_image_preprocessing_component(),
                 get_image_to_gcode_component(),
+                FuturisticButtons()
             ],
             style={
-                'backgroundImage': f'linear-gradient(to bottom right, {colors["background"]}, {colors["background2"]})',
+                'backgroundImage': f'linear-gradient(to bottom right, {colors["blue"]}, {colors["red"]})',
                 'padding': '50px',
                 'borderRadius': '10px',
                 'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)'
