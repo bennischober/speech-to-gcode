@@ -1,6 +1,7 @@
 from flask import Flask, request, send_file, make_response
 from PIL import Image
 from diffusers import StableDiffusionPipeline
+from transformers import pipeline, AutoProcessor, WhisperForConditionalGeneration
 import torch
 import io
 import zipfile
@@ -11,6 +12,14 @@ app = Flask(__name__)
 model_id = "runwayml/stable-diffusion-v1-5"
 pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16)
 pipe = pipe.to("cuda")
+
+# Load Speech to Text model
+# reference: https://huggingface.co/openai/whisper-large#english-to-english
+stt_model_id = "openai/whisper-large-v2"
+whisper_processor = AutoProcessor.from_pretrained(stt_model_id)
+whisper_model = WhisperForConditionalGeneration.from_pretrained(stt_model_id)
+# whisper_model.config.forced_decoder_ids = None
+
 
 @app.route('/api_multi', methods=['POST'])
 def generate_image():
@@ -48,6 +57,25 @@ def generate_image():
     response.headers.set('Content-Type', 'application/zip')
     response.headers.set('Content-Disposition', 'attachment', filename='generated_images.zip')
     return response
+
+@app.route("/api/stt", methods=['POST'])
+def stt():
+    # get bytes send with request.post(, data=data)
+    data = request.data
+    
+    # convert bytes to torch tensor
+    input_features = torch.tensor(whisper_processor(data, return_tensors="pt").input_ids).to("cuda")
+
+    # reference: https://huggingface.co/docs/transformers/main/en/model_doc/whisper#transformers.WhisperForConditionalGeneration.forward.example
+
+    generated_ids = whisper_model.generate(input=input_features)
+    generated_text = whisper_processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+
+    # translate text
+    result = pipeline("translation_de_to_en")(generated_text)
+    # response = make_response(result)
+    # return response
+    return result
 
 
 if __name__ == '__main__':
