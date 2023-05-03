@@ -66,7 +66,7 @@ def get_speech_to_text_component():
                             [
                                 dbc.Input(
                                     id="text-input",
-                                    placeholder="Enter text...",
+                                    placeholder="Geben Sie einen Text ein...",
                                     class_name="rounded-pill",
                                 ),
                                 dbc.Button(
