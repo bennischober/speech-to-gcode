@@ -4,9 +4,8 @@ This module is used to create a notification component. The component can be use
 
 from uuid import uuid4
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State
+from dash import Input, Output, State, callback
 from dash import Dash
-from utils.callback_handler import add_callback
 
 
 def get_notification_component(message: str, id: str = str(uuid4()), duration: int = 4000):
@@ -17,17 +16,12 @@ def get_notification_component(message: str, id: str = str(uuid4()), duration: i
         duration=duration,
     )
 
-
-def get_callback(app: Dash):
-    @app.callback(
-        Output("alert-auto", "is_open"),
-        [Input("alert-toggle-auto", "n_clicks")],
-        [State("alert-auto", "is_open")],
-    )
-    def toggle_alert(n, is_open):
-        if n:
-            return not is_open
-        return is_open
-
-
-add_callback(get_callback)
+@callback(
+    Output("alert-auto", "is_open"),
+    [Input("alert-toggle-auto", "n_clicks")],
+    [State("alert-auto", "is_open")],
+)
+def toggle_alert(n, is_open):
+    if n:
+        return not is_open
+    return is_open
