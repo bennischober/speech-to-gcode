@@ -5,9 +5,9 @@ WORKDIR /usr/app/src
 RUN pip3 install --upgrade diffusers[torch] && \
     pip3 install transformers && \
     pip3 install Flask && \
-    pip3 install Pillow
-    # pip3 install torch
+    pip3 install Pillow && \
+    pip3 install numpy
 
-COPY stable_diffusion_rest_api_0_2.py ./
+COPY rest_api_0_3.py ./
 
-CMD [ "python", "./stable_diffusion_rest_api_0_2.py"]
+CMD [ "python", "./rest_api_0_3.py"]

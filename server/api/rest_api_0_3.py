@@ -1,9 +1,11 @@
 from flask import Flask, request, send_file, make_response
 from PIL import Image
 from diffusers import StableDiffusionPipeline
+from transformers import WhisperProcessor, WhisperForConditionalGeneration, WhisperFeatureExtractor, pipeline
 import torch
 import io
 import zipfile
+import numpy as np
 
 app = Flask(__name__)
 
@@ -11,6 +13,12 @@ app = Flask(__name__)
 model_id = "runwayml/stable-diffusion-v1-5"
 pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16)
 pipe = pipe.to("cuda")
+
+# Load Speech to Text model
+# reference: https://huggingface.co/openai/whisper-large#english-to-english
+stt_model_id = "openai/whisper-large-v2"
+whisper_processor = WhisperProcessor.from_pretrained(stt_model_id)
+whisper_model = WhisperForConditionalGeneration.from_pretrained(stt_model_id).to("cuda")
 
 @app.route('/stable_diff', methods=['POST'])
 def generate_image():
@@ -58,27 +66,24 @@ def generate_image():
 
 @app.route("/api/stt", methods=['POST'])
 def stt():
-    # get bytes send with request.post(, data=data)
-    data = request.data
-    
-    # convert bytes to torch tensor
-    input_features = torch.tensor(whisper_processor(data, return_tensors="pt").input_ids).to("cuda")
+    file = request.files.get("audio")
+    if not file:
+        return "No audio file provided", 400
 
-    # reference: https://huggingface.co/docs/transformers/main/en/model_doc/whisper#transformers.WhisperForConditionalGeneration.forward.example
+    data = np.frombuffer(file.read(), dtype=np.int16)
 
-    generated_ids = whisper_model.generate(input=input_features)
-    generated_text = whisper_processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    inputs = whisper_processor.feature_extractor(data,  return_tensors="pt", sampling_rate=16_000).input_features.to("cuda")
+    predicted_ids = whisper_model.generate(inputs, max_length=480_000)
+    generated_text = whisper_processor.batch_decode(predicted_ids, skip_special_tokens=True, normalize=True)[0]
 
-    # translate text
-    result = pipeline("translation_de_to_en")(generated_text)
-    # response = make_response(result)
-    # return response
-    return result
+    app.logger.info(f"Text generated: {generated_text}")
+
+    return generated_text
 
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True, host='0.0.0.0')
 
 # Docker Commands:
-# docker image build -t stligoeh_stable_diff_api:0.2 /home/stligoeh/text_to_gcode/text_to_image/docker_image
-# docker run -d --gpus '"device=1"' --rm -p 5000:5000 --name stligoeh_stable_diff_multi stligoeh_stable_diff_api:0.2
+# docker image build -t stbescho_rest_apis:0.3 /home/stbescho/text_to_gcode/
+# docker run -d --gpus '"device=1"' --rm -p 5000:5000 --name stbescho_rest_apis stbescho_rest_apis:0.3
