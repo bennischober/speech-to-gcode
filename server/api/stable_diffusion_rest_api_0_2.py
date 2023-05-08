@@ -1,7 +1,6 @@
 from flask import Flask, request, send_file, make_response
 from PIL import Image
 from diffusers import StableDiffusionPipeline
-from transformers import pipeline, AutoProcessor, WhisperForConditionalGeneration
 import torch
 import io
 import zipfile
@@ -13,15 +12,7 @@ model_id = "runwayml/stable-diffusion-v1-5"
 pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16)
 pipe = pipe.to("cuda")
 
-# Load Speech to Text model
-# reference: https://huggingface.co/openai/whisper-large#english-to-english
-stt_model_id = "openai/whisper-large-v2"
-whisper_processor = AutoProcessor.from_pretrained(stt_model_id)
-whisper_model = WhisperForConditionalGeneration.from_pretrained(stt_model_id)
-# whisper_model.config.forced_decoder_ids = None
-
-
-@app.route('/api_multi', methods=['POST'])
+@app.route('/stable_diff', methods=['POST'])
 def generate_image():
     # get params
     params = request.json
@@ -38,9 +29,16 @@ def generate_image():
     print('received prompt:', prompt)
 
     # Generate Images
-    images = pipe(prompt, num_images_per_prompt=num_images_per_prompt).images 
-    print('amount Images', len(images))
-    print('generated images for prompt:', prompt)
+    images = pipe(
+        prompt, 
+        negative_prompt=negative_prompt,
+        width=width,
+        height=height,
+        num_inference_steps=num_inference_steps,
+        guidance_scale=guidance_scale,
+        num_images_per_prompt=num_images_per_prompt).images 
+
+    print(f'generated {len(images)} images for prompt: {prompt}')
 
     # Create ZIP file
     zip_data = io.BytesIO()
@@ -79,8 +77,8 @@ def stt():
 
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True, host='0.0.0.0')
+    app.run(port=5000, debug=True, host='0.0.0.0')
 
 # Docker Commands:
 # docker image build -t stligoeh_stable_diff_api:0.2 /home/stligoeh/text_to_gcode/text_to_image/docker_image
-# docker run -d --gpus '"device=1"' --rm -p 5001:5001 --name stligoeh_stable_diff_multi stligoeh_stable_diff_api:0.2
+# docker run -d --gpus '"device=1"' --rm -p 5000:5000 --name stligoeh_stable_diff_multi stligoeh_stable_diff_api:0.2

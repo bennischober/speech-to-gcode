@@ -5,42 +5,13 @@ from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
 from components.speech_to_text.recorder import recorder
 
-transcript = ""
+POSITIVE_PROMPTS = ["realistic digital portrait", "global illumination",
+                    "shot at 8k resolution", "highly detailed", "photo realistic", "masterpiece"]
+NEGATIVE_PROMPTS = ["bad art", "low detail", "plain background", "grainy", "low quality",
+                    "disfigured", "out of frame", "bad proportions", "distortion", "deformations"]
 
 
-def get_speech_to_text_component(skip_recorder: bool = True, debug: bool = True):
-    global transcript
-
-    @callback(
-        Output("load-model-status", "children"),
-        Input("load-model-button", "n_clicks"),
-        prevent_initial_call=True,
-    )
-    def load_model(n_clicks):
-        recorder.load_model()
-        return ""
-
-    @callback(
-        Output("recorder-status", "children"),
-        Input("loading-button", "n_clicks"),
-    )
-    def start_loading(n_clicks):
-        if skip_recorder:
-            return "Skipped loading model"
-        recorder.load_model()
-        return "Model loaded"
-
-    @callback(
-        Output("transcription-output", "children"),
-        Input("update-interval", "n_intervals"),
-        prevent_initial_call=True,
-    )
-    def update_output(_):
-        global transcript
-        while not recorder.transcription_queue.empty():
-            transcript += recorder.transcription_queue.get() + " "
-        return transcript
-
+def get_speech_to_text_component():
     @callback(
         Output("diffusion_prompt", "data"),
         State("diffusion_prompt", "data"),
@@ -50,7 +21,8 @@ def get_speech_to_text_component(skip_recorder: bool = True, debug: bool = True)
     def handle_text_input(diffusion_prompt_old, n_submit, diffusion_prompt):
         if n_submit is None:
             return dash.no_update
-        print('diffusion_prompt_old', diffusion_prompt_old, 'n_submit', n_submit, 'diffusion_prompt', diffusion_prompt)
+        print('diffusion_prompt_old', diffusion_prompt_old, 'n_submit',
+              n_submit, 'diffusion_prompt', diffusion_prompt)
         return diffusion_prompt
 
     @callback(
@@ -82,34 +54,20 @@ def get_speech_to_text_component(skip_recorder: bool = True, debug: bool = True)
                 return "fas fa-microphone", "light", bool(text)
         return "fas fa-microphone", "light", bool(text), ""
 
-    def load_model_button(debug: bool):
-        if debug:
-            return dbc.Container([
-                dbc.Button("Start Loading",
-                           id="load-model-button", className="mb-3"),
-                html.Div(id="load-model-status", style={"display": "none"})
-            ])
-        else:
-            return html.Div(style={"display": "none"})
-
     return dbc.Card(
         children=[
-            dbc.CardHeader('Speech-To-Text Component'),
+            dbc.CardHeader('Speech-To-Text'),
             dbc.CardBody([
-                html.H1("Audio Transcription"),
-                load_model_button(debug),
                 dbc.Container(
                     [
                         html.H5(
-                            "You can either type in text or use your microphone to record audio."),
-                        dbc.Button("Start Loading",
-                                   id="loading-button", className="mb-3", style={"display": "none"}),
+                            "Sie können entweder einen Text eingeben oder eine Spracheingabe durch das Mikrofon-Symbol starten."),
                         dbc.InputGroup(
                             [
                                 dbc.Input(
                                     id="text-input",
-                                    placeholder="Enter text...",
-                                    className="rounded-pill",
+                                    placeholder="Geben Sie einen Text ein...",
+                                    class_name="rounded-pill",
                                 ),
                                 dbc.Button(
                                     html.Span(
@@ -119,20 +77,40 @@ def get_speech_to_text_component(skip_recorder: bool = True, debug: bool = True)
                                     ),
                                     id="microphone-button",
                                     color="light",
-                                    className="rounded-circle p-2",
+                                    class_name="rounded-circle p-2",
                                     style={"width": "45px",
                                            "height": "45px"},
                                     disabled=False,
                                 ),
                             ],
-                            className="mb-3 d-flex align-items-center",
+                            class_name="mb-3 d-flex align-items-center",
                         ),
-                        html.Div(id="recorder-status"),
                         html.Div(id="output"),
                         html.Div(id="microphone-status"),
-                        html.Div(id="transcription-output"),
-                        dcc.Interval(id="update-interval",
-                                     interval=500, n_intervals=0),
+                        dbc.Accordion(
+                            [
+                                dbc.AccordionItem(
+                                    [
+                                        html.P(
+                                            "Hier können Sie die Standardwerte für die Bildgenerierung ändern. Positive und negative Prompts sind Wörter, die das neuronale Netz dazu bringen, das Bild in eine bestimmte Richtung zu generieren."),
+                                        dbc.Row([
+                                            dbc.Col([html.H6("Positive Prompts"), dcc.Checklist(POSITIVE_PROMPTS, POSITIVE_PROMPTS), dbc.Input(id="positive-prompts-input", type="text",
+                                                    placeholder="Optional: Geben Sie positive Prompts ein"), dbc.FormText("Hinweis: Um mehrere Werte hinzuzufügen, trennen Sie diese mit einem Komma.")]),
+                                            dbc.Col([html.H6("Negative Prompts"), dcc.Checklist(NEGATIVE_PROMPTS, NEGATIVE_PROMPTS), dbc.Input(id="negative-prompts-input", type="text",
+                                                    placeholder="Optional: Geben Sie negative Prompts ein"), dbc.FormText("Hinweis: Um mehrere Werte hinzuzufügen, trennen Sie diese mit einem Komma.")])
+                                        ]),
+                                    ],
+                                    title="Standardwerte für Bildgenerierung ändern",
+                                ),
+                            ],
+                            start_collapsed=True
+                        ),
+                        dbc.Row([
+                            dbc.Col([dbc.Button(id="generate-image", children="Bilder generieren",
+                                                color="primary", className="mt-3")], width=4),
+                            dbc.Col([dbc.Button(id="reset-inputs", children="Eingaben zurücksetzen",
+                                                color="danger", className="mt-3")], width=4),
+                        ], justify="evenly"),
                     ],
                     className="mt-5",
                 ),
