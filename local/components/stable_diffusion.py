@@ -4,59 +4,66 @@ import requests
 import zipfile
 import base64
 import io
+from utils.config import SD_ENDPOINT
+
 
 def get_stable_diffusion_component():
     return dbc.Card(
-            children=[
-                dbc.CardHeader('Stable Diffusion'),
-                dbc.Container([
-                    dbc.Row([
+        children=[
+            dbc.CardHeader('Stable Diffusion'),
+            dbc.Container([
+                dbc.Row([
                         dbc.Col([
                             html.H4('Bild 1', style={"textAlign": "center"}),
                             dcc.Loading(
                                 dbc.Button(
-                                    html.Img(id='stable_diff_img_1', className='img-thumbnail', style={"display": "block", "margin": "auto"}), 
-                                id='button_diff_img_1')
+                                    html.Img(id='stable_diff_img_1', className='img-thumbnail',
+                                             style={"display": "block", "margin": "auto"}),
+                                    id='button_diff_img_1')
                             )
                         ]),
                         dbc.Col([
                             html.H4('Bild 2', style={"textAlign": "center"}),
                             dcc.Loading(
                                 dbc.Button(
-                                    html.Img(id='stable_diff_img_2', className='img-thumbnail', style={"display": "block", "margin": "auto"}), 
-                                id='button_diff_img_2')
+                                    html.Img(id='stable_diff_img_2', className='img-thumbnail',
+                                             style={"display": "block", "margin": "auto"}),
+                                    id='button_diff_img_2')
                             )
                         ]),
                         dbc.Col([
                             html.H4('Bild 3', style={"textAlign": "center"}),
                             dcc.Loading(
                                 dbc.Button(
-                                    html.Img(id='stable_diff_img_3', className='img-thumbnail', style={"display": "block", "margin": "auto"}), 
-                                id='button_diff_img_3')
+                                    html.Img(id='stable_diff_img_3', className='img-thumbnail',
+                                             style={"display": "block", "margin": "auto"}),
+                                    id='button_diff_img_3')
                             )
                         ]),
                         dbc.Col([
                             html.H4('Bild 4', style={"textAlign": "center"}),
                             dcc.Loading(
                                 dbc.Button(
-                                    html.Img(id='stable_diff_img_4', className='img-thumbnail', style={"display": "block", "margin": "auto"}), 
-                                id='button_diff_img_4')
+                                    html.Img(id='stable_diff_img_4', className='img-thumbnail',
+                                             style={"display": "block", "margin": "auto"}),
+                                    id='button_diff_img_4')
                             )
                         ]),
-                    ], className='mb-3', style={'padding': '0px 5px 5px 0px'}),
-                    # dcc.Store(id='stable_diff_img_1'),
-                    # dcc.Store(id='stable_diff_img_2'),
-                    # dcc.Store(id='stable_diff_img_3'),
-                    # dcc.Store(id='stable_diff_img_4'),
-                    dcc.Store(id='stable_diff_selected_img')
-                ]),
-                dbc.Button("Bilder neu laden", id='generate_diff_imges', className='mb-3', style={'padding': '0px 5px 5px 0px'}),
-            ],
-            className='mb-4',
-            style={
-                'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)'
-            }
-        )
+                        ], className='mb-3', style={'padding': '0px 5px 5px 0px'}),
+                # dcc.Store(id='stable_diff_img_1'),
+                # dcc.Store(id='stable_diff_img_2'),
+                # dcc.Store(id='stable_diff_img_3'),
+                # dcc.Store(id='stable_diff_img_4'),
+                dcc.Store(id='stable_diff_selected_img')
+            ]),
+            dbc.Button("Bilder neu laden", id='generate_diff_imges',
+                       className='mb-3', style={'padding': '0px 5px 5px 0px'}),
+        ],
+        className='mb-4',
+        style={
+            'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)'
+        }
+    )
 
 # Callback to extract images from ZIP file and store in base64 format
 @callback(
@@ -67,20 +74,16 @@ def get_stable_diffusion_component():
     Input('diffusion_prompt', 'data'),
     Input('generate_diff_imges', 'n_clicks')
 )
-def generate_diff_images(diffusion_prompt, n_clicks):
-    if n_clicks is None:
+def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
+    if n_clicks is None and diffusion_prompt is None:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Define the API endpoint
-    url = "http://localhost:5000/stable_diff"
+    url = SD_ENDPOINT
 
-    # Define the prompt data
-    # prompt: realistic digital portrait, global illumination, shot at 8k resolution, highly detailed, photo realistic, masterpiece
-    # negative_prompt: bad art, low detail, plain background, grainy, low quality, disfigured, out of frame, bad proportions, distortion, deformations
-    print(diffusion_prompt)
     data = {
-        "prompt": diffusion_prompt,
-        "negative_prompt": "", # bad art, low detail, plain background, grainy, low quality, disfigured, out of frame, bad proportions, distortion, deformations, missing limbs, cropped, badly framed, detailed background, background
+        "prompt": diffusion_prompt['prompt'],
+        "negative_prompt": diffusion_prompt['negative'],
         "num_images_per_prompt": 4
     }
 
@@ -102,12 +105,14 @@ def generate_diff_images(diffusion_prompt, n_clicks):
            f"data:image/png;base64,{image_stores[2]}", \
            f"data:image/png;base64,{image_stores[3]}"
 
+
 @callback(Output('stable_diff_selected_img', 'data', allow_duplicate=True),
           State('stable_diff_img_1', 'src'),
           Input('button_diff_img_1', 'n_clicks'),
           prevent_initial_call=True)
 def select_diff_img_1(image_src, _):
     return image_src
+
 
 @callback(Output('stable_diff_selected_img', 'data', allow_duplicate=True),
           State('stable_diff_img_2', 'src'),
@@ -116,12 +121,14 @@ def select_diff_img_1(image_src, _):
 def select_diff_img_2(image_src, _):
     return image_src
 
+
 @callback(Output('stable_diff_selected_img', 'data', allow_duplicate=True),
           State('stable_diff_img_3', 'src'),
           Input('button_diff_img_3', 'n_clicks'),
           prevent_initial_call=True)
 def select_diff_img_3(image_src, _):
     return image_src
+
 
 @callback(Output('stable_diff_selected_img', 'data', allow_duplicate=True),
           State('stable_diff_img_4', 'src'),

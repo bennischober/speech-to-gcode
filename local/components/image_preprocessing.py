@@ -33,6 +33,7 @@ def get_image_preprocessing_component():
                     ]),
                 ], className='m-4', style={'padding': '0px 5px 5px 0px'})
             ],
+            className='mb-4',
             style={
                 'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)'
             }
