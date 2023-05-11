@@ -2,6 +2,7 @@ import dash_bootstrap_components as dbc
 from dash import html, callback, Input, Output, State
 import dash_bootstrap_components as dbc
 
+
 def _create_tabs(prefix: str):
     return dbc.Tab([
         dbc.Container([
@@ -26,16 +27,20 @@ def _create_tabs(prefix: str):
         ),
     ], label=f"{prefix.capitalize()} Prompts", tab_id=prefix)
 
+
 def _create_callbacks(prefix: str):
     @callback(
-    Output(f"{prefix}-prompts-checklist", "options"), # update its options => add new prompt
-    Output(f"{prefix}-prompts-checklist", "value"), # update selected => only needed on initial call
-    Output(f"{prefix}-prompts-store", "data"), # update store => add new prompt
-    Output(f"{prefix}-prompts-input", "value"), # clear input
-    Input(f"add-{prefix}-prompt", "n_clicks"), # add prompt on click
-    Input(f"{prefix}-prompts-store", "data"), # get prompts from store
-    Input(f"{prefix}-prompts-checklist", "value"), # get selected prompts
-    State(f"{prefix}-prompts-input", "value") # get prompt from input
+        # update its options => add new prompt
+        Output(f"{prefix}-prompts-checklist", "options"),
+        # update selected => only needed on initial call
+        Output(f"{prefix}-prompts-checklist", "value"),
+        # update store => add new prompt
+        Output(f"{prefix}-prompts-store", "data"),
+        Output(f"{prefix}-prompts-input", "value"),  # clear input
+        Input(f"add-{prefix}-prompt", "n_clicks"),  # add prompt on click
+        Input(f"{prefix}-prompts-store", "data"),  # get prompts from store
+        Input(f"{prefix}-prompts-checklist", "value"),  # get selected prompts
+        State(f"{prefix}-prompts-input", "value")  # get prompt from input
     )
     def update_prompts(n_clicks, prompts, selected, value):
         if value is None or value == "":
@@ -55,26 +60,36 @@ def _create_callbacks(prefix: str):
 _create_callbacks("positive")
 _create_callbacks("negative")
 
+
 @callback(
-    Output("modal", "is_open"),
-    Input("open", "n_clicks"),
-    Input("close", "n_clicks"),
-    State("modal", "is_open"),
+    Output("settings-modal", "is_open"),
+    Output("settings-prompts-store", "data", allow_duplicate=True),
+    Output("save-settings-checkbox", "value"),
+    Input("settings-modal-open", "n_clicks"),
+    Input("settings-modal-save", "n_clicks"),
+    Input("settings-prompts-store", "data"),
+    State("settings-modal", "is_open"),
+    State("save-settings-checkbox", "value"),
+    prevent_initial_call=True
 )
-def toggle_modal(n1, n2, is_open):
+def toggle_modal(n1: int, n2: int, store: dict, is_open: bool, checked: bool):
+    init = store['save_settings'] if checked is None else checked
+    store['save_settings'] = init
     if n1 or n2:
-        return not is_open
-    return is_open
+        return not is_open, store, init
+    return is_open, store, init
+
 
 # EXPORTS
 
-settings_button = dbc.Button(id="open", children="Einstellungen",
+settings_button = dbc.Button(id="settings-modal-open", children="Einstellungen",
                              color="secondary", className="mt-3")
 
 settings = dbc.Modal(
     [
         dbc.ModalHeader(
-            dbc.ModalTitle("Einstellungen")),
+            dbc.ModalTitle("Einstellungen"),
+            close_button=False),
         dbc.ModalBody([
             html.P(
                 "Hier können Sie die Standardwerte für die Bildgenerierung ändern. Positive und negative Prompts sind Wörter, die das neuronale Netz dazu bringen, das Bild in eine bestimmte Richtung zu generieren."),
@@ -86,13 +101,18 @@ settings = dbc.Modal(
                 ]
             ),
         ]),
-        dbc.ModalFooter(
+        dbc.ModalFooter([
+            dbc.Checkbox(
+                id="save-settings-checkbox",
+                label="Einstellungen beibehalten"
+            ),
             dbc.Button(
-                "Speichern", id="close", className="ms-auto", n_clicks=0
+                "Speichern", id="settings-modal-save", className="ms-auto", n_clicks=0
             )
-        ),
+        ]),
     ],
-    id="modal",
+    id="settings-modal",
     is_open=False,
     size="xl",
+    backdrop="static",
 )
