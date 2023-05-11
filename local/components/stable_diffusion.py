@@ -4,6 +4,8 @@ import requests
 import zipfile
 import base64
 import io
+from utils.config import SD_ENDPOINT
+
 
 def get_stable_diffusion_component():
     return dbc.Card(
@@ -77,7 +79,7 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Define the API endpoint
-    url = "http://localhost:5000/stable_diff"
+    url = SD_ENDPOINT
 
     data = {
         "prompt": diffusion_prompt['prompt'],

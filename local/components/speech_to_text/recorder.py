@@ -2,13 +2,13 @@ import io
 import os
 import queue
 import threading
+from utils.config import STT_ENDPOINT
 import utils.logger as logger
 import sounddevice as sd
 import soundfile as sf
 import tempfile
 import requests
 
-STT_ENDPOINT = "http://localhost:5000/api/stt"
 
 
 class Recorder:
