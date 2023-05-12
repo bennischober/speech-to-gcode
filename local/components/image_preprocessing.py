@@ -4,6 +4,9 @@ import cv2
 import base64
 import numpy as np
 
+dilated_img = None
+orginal_img = None 
+
 def get_image_preprocessing_component():
     return dbc.Card(
             children=[
@@ -81,8 +84,20 @@ def process_image(selected_diff_image):
         _, dilated_encoded = cv2.imencode('.png', dilated)
         dilated_base64 = base64.b64encode(dilated_encoded).decode('utf-8')
 
+        global dilated_img
+        dilated_img = dilated
+
+        global orginal_img
+        orginal_img = origial
+
         return f"data:image/png;base64,{original_base64}", \
             f"data:image/png;base64,{gray_base64}", \
             f"data:image/png;base64,{blurred_base64}", \
             f"data:image/png;base64,{edges_base64}", \
             f"data:image/png;base64,{dilated_base64}"
+    
+def get_dilated_img():
+    return dilated_img
+    
+def get_org_img():
+     return orginal_img
