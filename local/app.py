@@ -1,11 +1,11 @@
 import dash
-from dash import html
+from dash import html, dcc
 import dash_bootstrap_components as dbc
-from components.speech_to_text_component import get_speech_to_text_component
-from components.stable_diffusion import get_stable_diffusion_component
-from components.image_preprocessing import get_image_preprocessing_component
-from components.image_to_gcode import get_image_to_gcode_component
-from components.buttons import FuturisticButtons
+from components.speech_to_text.main_component import get_speech_to_text_component
+from components.stable_diffusion.main_component import get_stable_diffusion_component, get_selected_preload_image
+from components.image_preprocessing.main_component import get_image_preprocessing_component
+from components.image_to_gcode.main_component import get_image_to_gcode_component
+from components.controlling.main_component import FuturisticButtons
 
 # Load Icons
 html.I(className='fas fa-microphone')
@@ -64,11 +64,18 @@ app.layout = html.Div(
         # Komponenten
         html.Div(
             children=[
+                # The Stores
+                dcc.Store(id='base64_selected_stable_diff_img_store', data=get_selected_preload_image()),
+                dcc.Store(id='base64_dilated_image_store'),
+                dcc.Store(id='gcode_store'),
+                dcc.Store(id='recent_gcode_generated_successfully_store', data=None),
+
+                # The Components
                 get_speech_to_text_component(),
                 get_stable_diffusion_component(),
                 get_image_preprocessing_component(),
                 get_image_to_gcode_component(),
-                FuturisticButtons()
+                FuturisticButtons(),
             ],
             style={
                 'backgroundImage': f'linear-gradient(to bottom right, {colors["blue"]}, {colors["red"]})',

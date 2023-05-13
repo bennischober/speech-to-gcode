@@ -1,5 +1,5 @@
 import dash_bootstrap_components as dbc
-from dash import html, Input, Output, callback
+from dash import html, Input, Output, callback, dcc
 import cv2
 import base64
 import numpy as np
@@ -11,8 +11,6 @@ def get_image_preprocessing_component():
     return dbc.Card(
             children=[
                 dbc.CardHeader('Image Preprocessing'),
-                dbc.CardBody('Short Description'),
-                # Hier fügen Sie Ihre dritte Komponente hinzu
                 dbc.Row([
                     dbc.Col([
                         html.H4('Eingabe', id='testA'),
@@ -34,7 +32,7 @@ def get_image_preprocessing_component():
                         html.H4('GCODE-Bild'),
                         html.Img(id='dilated-image', className='img-thumbnail', style={"display": "block", "margin": "auto"})
                     ]),
-                ], className='m-4', style={'padding': '0px 5px 5px 0px'})
+                ], className='m-4', style={'padding': '0px 5px 5px 0px'}),
             ],
             className='mb-4',
             style={
@@ -48,13 +46,12 @@ def get_image_preprocessing_component():
           Output('blurred-image', 'src'),
           Output('edges-image', 'src'),
           Output('dilated-image', 'src'),
-          Input('stable_diff_selected_img', 'data'),
-          prevent_initial_call=True)
+          Output('base64_dilated_image_store', 'data'),
+          Input('base64_selected_stable_diff_img_store', 'data'))
 def process_image(selected_diff_image):
     if selected_diff_image is not None:
         # Convert image
-        encoded_image = selected_diff_image
-        decoded_image = base64.b64decode(encoded_image.split(',')[1])
+        decoded_image = base64.b64decode(selected_diff_image.split(',')[1])
         image_array = np.frombuffer(decoded_image, dtype=np.uint8)
         origial = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
@@ -84,20 +81,21 @@ def process_image(selected_diff_image):
         _, dilated_encoded = cv2.imencode('.png', dilated)
         dilated_base64 = base64.b64encode(dilated_encoded).decode('utf-8')
 
-        global dilated_img
-        dilated_img = dilated
+        # global dilated_img
+        # dilated_img = dilated
 
-        global orginal_img
-        orginal_img = origial
+        # global orginal_img
+        # orginal_img = origial
 
         return f"data:image/png;base64,{original_base64}", \
             f"data:image/png;base64,{gray_base64}", \
             f"data:image/png;base64,{blurred_base64}", \
             f"data:image/png;base64,{edges_base64}", \
+            f"data:image/png;base64,{dilated_base64}", \
             f"data:image/png;base64,{dilated_base64}"
     
-def get_dilated_img():
-    return dilated_img
+# def get_dilated_img():
+#     return dilated_img
     
-def get_org_img():
-     return orginal_img
+# def get_org_img():
+#      return orginal_img
