@@ -4,10 +4,11 @@ import requests
 import zipfile
 import base64
 import io
+import os
 from utils.config import SD_ENDPOINT
 
 preloaded_images = None
-with open("components/stable_diffusion/preloaded_images.txt", "r") as file:
+with open(os.path.join(os.path.dirname(__file__), "preloaded_images.txt"), "r") as file:
     preloaded_images = eval(file.read())
 
 
