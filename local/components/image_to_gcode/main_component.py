@@ -19,12 +19,7 @@ def get_image_to_gcode_component():
                 html.Div([], id='gcode_content_layout')
             ]),
         ],
-        className='mb-4',
-        style={
-            'box-shadow': '0 4px 6px rgba(0, 0, 0, 0.1)',
-            'text-align': 'center',
-            'margin': ' 25px auto',
-        })
+        className='mb-4 card_image_to_gcode')
 
 ### Show GCODE if button is clicked ###
 @callback(

@@ -4,6 +4,71 @@ h4 {
   text-align: center
 }
 
+/* Stable Diff */
+.clickable_image_button {
+  background-color: transparent;
+  border: none;
+}
+
+#generate_diff_imges {
+  margin-bottom: 20px; 
+  color: #ffffff;
+  width: 60vw; 
+  display: block; 
+  margin: auto;
+}
+
+.center_image {
+  display: block;
+  margin: auto;
+}
+
+/* Preprocessing */
+.row_with_images {
+  padding: 0px 5px 5px 0px;
+}
+
+/* Image to GCode */
+.card_image_to_gcode {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  margin:  25px auto;
+}
+
+.gcode_style {
+  color: black;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  text-align: left;
+  color: #000000;
+  margin-left: 10px;
+}
+
+.gcode_status_icon {
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  margin: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center
+}
+
+.gcode_status_success {
+  background-color: green;
+}
+
+.gcode_status_error {
+  background-color: red;
+}
+
+.show_gcode_button {
+  width: 60vw; 
+  margin: auto; 
+  margin-bottom: 20px; 
+  color: #ffffff;
+}
+
 
 
 .button-container {

@@ -14,30 +14,27 @@ def get_image_preprocessing_component():
                 dbc.Row([
                     dbc.Col([
                         html.H4('Eingabe', id='testA'),
-                        html.Img(id='origial-image', className='img-thumbnail', style={"display": "block", "margin": "auto"})
+                        html.Img(id='origial-image', className='img-thumbnail center_image')
                     ], className='image_preprocessing'),
                     dbc.Col([
                         html.H4('Graustufenbild'),
-                        html.Img(id='gray-image', className='img-thumbnail', style={"display": "block", "margin": "auto"})
+                        html.Img(id='gray-image', className='img-thumbnail center_image')
                     ]),
                     dbc.Col([
                         html.H4('Blurred-Bild'),
-                        html.Img(id='blurred-image', className='img-thumbnail', style={"display": "block", "margin": "auto"})
+                        html.Img(id='blurred-image', className='img-thumbnail center_image')
                     ]),
                     dbc.Col([
                         html.H4('Kantenbild'),
-                        html.Img(id='edges-image', className='img-thumbnail', style={"display": "block", "margin": "auto"})
+                        html.Img(id='edges-image', className='img-thumbnail center_image')
                     ]),
                     dbc.Col([
                         html.H4('GCODE-Bild'),
-                        html.Img(id='dilated-image', className='img-thumbnail', style={"display": "block", "margin": "auto"})
+                        html.Img(id='dilated-image', className='img-thumbnail center_image')
                     ]),
-                ], className='m-4', style={'padding': '0px 5px 5px 0px'}),
+                ], className='m-4 row_with_images'),
             ],
-            className='mb-4',
-            style={
-                'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)'
-            }
+            className='mb-4'
         )
 
 @callback(
@@ -81,21 +78,9 @@ def process_image(selected_diff_image):
         _, dilated_encoded = cv2.imencode('.png', dilated)
         dilated_base64 = base64.b64encode(dilated_encoded).decode('utf-8')
 
-        # global dilated_img
-        # dilated_img = dilated
-
-        # global orginal_img
-        # orginal_img = origial
-
         return f"data:image/png;base64,{original_base64}", \
             f"data:image/png;base64,{gray_base64}", \
             f"data:image/png;base64,{blurred_base64}", \
             f"data:image/png;base64,{edges_base64}", \
             f"data:image/png;base64,{dilated_base64}", \
             f"data:image/png;base64,{dilated_base64}"
-    
-# def get_dilated_img():
-#     return dilated_img
-    
-# def get_org_img():
-#      return orginal_img

@@ -15,51 +15,45 @@ def get_stable_diffusion_component():
     return dbc.Card(
         children=[
             dbc.CardHeader('Stable Diffusion'),
-            dbc.Row([
-                dbc.Col([
-                    html.H4('Bild 1', style={"textAlign": "center"}),
-                    dcc.Loading(
-                        dbc.Button(
-                            html.Img(id='stable_diff_img_1', className='img-thumbnail', src=preloaded_images[0],
-                                     style={"display": "block", "margin": "auto"}),
-                            id='button_diff_img_1')
-                    )
+            html.Div([
+                dbc.Row([
+                    dbc.Col([
+                        html.H4('Bild 1', style={"textAlign": "center"}),
+                        dcc.Loading(
+                            dbc.Button(
+                                html.Img(id='stable_diff_img_1', className='img-thumbnail center_image', src=preloaded_images[0]),
+                                id='button_diff_img_1', className='clickable_image_button')
+                        )
+                    ]),
+                    dbc.Col([
+                        html.H4('Bild 2', style={"textAlign": "center"}),
+                        dcc.Loading(
+                            dbc.Button(
+                                html.Img(id='stable_diff_img_2', className='img-thumbnail center_image', src=preloaded_images[1]),
+                                id='button_diff_img_2', className='clickable_image_button')
+                        )
+                    ]),
+                    dbc.Col([
+                        html.H4('Bild 3', style={"textAlign": "center"}),
+                        dcc.Loading(
+                            dbc.Button(
+                                html.Img(id='stable_diff_img_3', className='img-thumbnail center_image', src=preloaded_images[2]),
+                                id='button_diff_img_3', className='clickable_image_button')
+                        )
+                    ]),
+                    dbc.Col([
+                        html.H4('Bild 4', style={"textAlign": "center"}),
+                        dcc.Loading(
+                            dbc.Button(
+                                html.Img(id='stable_diff_img_4', className='img-thumbnail center_image', src=preloaded_images[3]),
+                                id='button_diff_img_4', className='clickable_image_button')
+                        )
+                    ]),
                 ]),
-                dbc.Col([
-                    html.H4('Bild 2', style={"textAlign": "center"}),
-                    dcc.Loading(
-                        dbc.Button(
-                            html.Img(id='stable_diff_img_2', className='img-thumbnail', src=preloaded_images[1],
-                                     style={"display": "block", "margin": "auto"}),
-                            id='button_diff_img_2')
-                    )
-                ]),
-                dbc.Col([
-                    html.H4('Bild 3', style={"textAlign": "center"}),
-                    dcc.Loading(
-                        dbc.Button(
-                            html.Img(id='stable_diff_img_3', className='img-thumbnail', src=preloaded_images[2],
-                                     style={"display": "block", "margin": "auto"}),
-                            id='button_diff_img_3')
-                    )
-                ]),
-                dbc.Col([
-                    html.H4('Bild 4', style={"textAlign": "center"}),
-                    dcc.Loading(
-                        dbc.Button(
-                            html.Img(id='stable_diff_img_4', className='img-thumbnail', src=preloaded_images[3],
-                                     style={"display": "block", "margin": "auto"}),
-                            id='button_diff_img_4')
-                    )
-                ], className='mb-3', style={'padding': '0px 5px 5px 0px'}),
-            ]),
-            dbc.Button("Bilder neu laden", id='generate_diff_imges',
-                       className='mb-3', style={'padding': '0px 5px 5px 0px'}),
+                dbc.Button("Bilder neu laden", id='generate_diff_imges', className="mt-3"),
+            ], style={'width': '100%', 'padding': '20px 20px 20px 20px'}),
         ],
-        className='mb-4',
-        style={
-            'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)'
-        }
+        className='mb-4'
     )
 
 def get_selected_preload_image():

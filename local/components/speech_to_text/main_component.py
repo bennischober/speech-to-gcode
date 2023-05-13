@@ -66,10 +66,7 @@ def get_speech_to_text_component():
                       data={'save_settings': False}),
             dcc.Store("prompt-history", storage_type="local")
         ],
-        className='mb-4',
-        style={
-            'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.1)'
-        }
+        className='mb-4'
     )
 
 
