@@ -6,8 +6,12 @@ RUN pip3 install --upgrade diffusers[torch] && \
     pip3 install transformers && \
     pip3 install Flask && \
     pip3 install Pillow && \
-    pip3 install numpy
+    pip3 install numpy && \
+    pip3 install open_clip
 
-COPY rest_api_0_3.py ./
+COPY rest_api_0_4.py ./
 
-CMD [ "python", "./rest_api_0_3.py"]
+# copy other files from pipeline folder
+COPY pipeline/ ./pipeline/
+
+CMD [ "python", "./rest_api_0_4.py"]
