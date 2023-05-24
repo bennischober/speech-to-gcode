@@ -25,6 +25,10 @@ gcode_state_error_layout = [
 ]
 
 gcode_content_layout = [
+    html.Div([
+            dbc.Button("GCODE Kopieren", id="copy_gcode_button", color="primary", className="mr-2")
+        ]
+    ),
     dbc.Button("Hier Klicken, um den Code anzuzeigen", id="show_gcode_button", className="mt-3 show_gcode_button"),
     dbc.Collapse([
         html.H6("G-Code:"),

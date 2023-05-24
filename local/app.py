@@ -66,7 +66,7 @@ app.layout = html.Div(
             children=[
                 # The Stores
                 dcc.Store(id='base64_selected_stable_diff_img_store', data=get_selected_preload_image()),
-                dcc.Store(id='base64_dilated_image_store'),
+                dcc.Store(id='base64_edge_image_store'),
                 dcc.Store(id='gcode_store'),
                 dcc.Store(id='recent_gcode_generated_successfully_store', data=None),
 

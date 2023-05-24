@@ -1,105 +1,123 @@
 import numpy as np
 import cv2
+from scipy.spatial.distance import cdist
 
-path = "components\image_to_gcode\gcode.tap"
+# Image Preprocessing Params
+blurr_kernel_size = 5
+risize_factor = 2
 
+# Line Approximation Params
+fixed_epsilon = 1.0
 
+use_dynamic_epsilon = False
+epsilon_factor = 0.02
+max_epsilon = 2.5
+min_epsilon = 1.5
+
+# Shortest Path
+start_point = np.array([0, 0])
+
+# GCODE Params
 z_safe_hight = 10.0
 z_working_hight = 0.5
-z_depth = 1
+z_depth = 3
 z_feed = 500
 xy_feed = 1000
 spindle_speed = 24000
-def generate_gcode(contours):
-    gcode_data = []
+# Maximaler Vorschub ist ca. 3000 (immer bei G0) (3000mm pro Minute)
 
-    # set contour to (0|0)
-    minX = 1000
-    maxX = 0
-    minY = 1000
-    maxY = 0
+def getEdgeApprox(edge_image):
+       contours, _ = cv2.findContours(edge_image, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+       edge_approximations = []
 
-    for count, c in enumerate(contours):
-        tmp_minX = np.min(c[:, :, 0])
-        tmp_minY = np.min(c[:, :, 1])
-        tmp_maxX = np.max(c[:, :, 0])
-        tmp_maxY = np.max(c[:, :, 1])
-        if tmp_minX < minX:
-            minX = tmp_minX
-        if tmp_minY < minY:
-            minY = tmp_minY
-        if tmp_maxX > maxX:
-            maxX = tmp_maxX
-        if tmp_maxY > maxY:
-            maxY = tmp_maxY
+       for i in range(len(contours)):
+              edge_approx = cv2.approxPolyDP(contours[i], fixed_epsilon, True)
+              
+              # remove last element if it is already in contour
+              if edge_approx[-1] in edge_approx[:len(edge_approx)-2]:
+                     edge_approx = edge_approx[:-1]
+              
+              edge_approximations.append(edge_approx)
+       
+       return edge_approximations
 
-    contours_list = []
-    for contour in contours:
-        contour_list = []
-        for points in contour:
-            contour_list.append([points[0][0] - minX, points[0][1] - minY])
+def getContourStartPoint(contours):
+    contour_start_points = []
+    contour_mapping = []
+    for i, contour in enumerate(contours):
+        contour_start_points.append(np.array(contour[0][0])) # start_point
+        contour_start_points.append(np.array(contour[-1][0])) # end_point
 
-        contours_list.append(contour_list)
+        contour_mapping.append((i, False)) # start_point
+        contour_mapping.append((i, True)) # end_point
 
-    # write g-code
-    gcode_start = [f"M03 S{spindle_speed}",
-                   f"G00 Z{z_safe_hight}"]
-    gcode_end = [f"G00 Z{z_safe_hight}", "G00 X0 Y0", "M05", "M30"]
+    return np.array(contour_start_points), np.array(contour_mapping)
 
-    gcode_data = []
+# Shortest Path
+def optimize_contour_order(contours):
+    contour_start_points, contour_mapping = getContourStartPoint(contours) 
 
-    for elem in gcode_start:
-        gcode_data.append(f"{elem}\n")
+    new_order = np.array([])
+    contour_end_point = start_point # set the starting point as fist point
 
-    for contour in contours_list:
+    while True:
+        nn_index = np.argmin(cdist([contour_end_point], contour_start_points)) # get nearest neighbor index
+        nn_p_index = nn_index + 1 if nn_index % 2 == 0 else nn_index - 1 # get partner index
+        contour_end_point = contour_start_points[nn_p_index] # Set new contour end
 
-        tmp_contour_len = len(contour)
-        gcode_data.append(
-            f"{tmp_contour_len}#####################################\n")
+        new_order = np.append(new_order, contour_mapping[nn_index], axis=0) # Update Order
 
-        gcode_data.append(f"G00 X{contour[0][0]} Y{contour[0][1]}\n")
-        gcode_data.append(f"G00 Z0\n")
-        gcode_data.append(f"G01 Z-{z_depth} F{z_feed}\n")
+        contour_start_points = np.delete(contour_start_points, [nn_index, nn_p_index], axis=0) # Remove used Kontours
+        contour_mapping = np.delete(contour_mapping, [nn_index, nn_p_index], axis=0) # Remove used Kontours
 
-        if tmp_contour_len == 2:
-            gcode_data.append(
-                f"G01 X{contour[1][0]} Y{contour[1][1]} F{xy_feed}\n")
+        if len(contour_start_points) == 0:
+            break
 
-        gcode_data.append(f"G00 Z{z_working_hight}\n")
+    # use new_order for contour and reverse some contours
+    return [contours[int(c_task[0])] if int(c_task[1]) == 0 else contours[int(c_task[0])][::-1] for c_task in new_order.reshape((-1, 2))] 
 
-        if tmp_contour_len > 2:
-            for i in range(tmp_contour_len-1):
-                if i == 0:
-                    gcode_data.append(
-                        f"G01 X{contour[i+1][0]} Y{contour[i+1][1]} F{xy_feed}\n")
-                else:
-                    gcode_data.append(
-                        f"G01 X{contour[i+1][0]} Y{contour[i+1][1]}\n")
-            gcode_data.append(f"G00 Z{z_working_hight}\n")
+def generateGCODE(contours):
+    gcode_lines = []
 
-    for elem in gcode_end:
-        gcode_data.append(f"{elem}\n")
+    # Drehgeschwindigkeit und initiale Höhe festlegen
+    gcode_lines += [
+        f'M03 S{spindle_speed}', 
+        f'G00 Z{z_safe_hight}'
+    ]
 
-    return gcode_data
-    # Save the G-code to a file
-    # with open(save_file_str, "w") as f:
-    #     f.writelines(gcode_data)
+    # GCODE für die Kontouren
+    for i, edge_approx in enumerate(contours):
+        gcode_lines += [
+            f'######## Contour {i+1} ########',
+            f'G00 X{edge_approx[0][0][0]} Y{edge_approx[0][0][1]}',
+            f'G00 Z{z_working_hight}' if i == 0 else None,
+            'G00 Z0',
+            f'G01 Z-3 F{z_feed}',
+            f'G01 X{edge_approx[1][0][0]} Y{edge_approx[1][0][1]} F{xy_feed}' if len(edge_approx) > 1 else None,
+            *[f'G01 X{edge[0][0]} Y{edge[0][1]}' for edge in edge_approx[2:]],
+            f'G00 Z{z_working_hight}'
+        ]
 
-def get_contours(dilated, contour_minArcLength=0):
-    contours, _ = cv2.findContours(dilated, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+    # Fräßkopf zu initialer Position zurückbewegen
+    gcode_lines += [
+        '######## End ########',
+        f'G00 Z{z_safe_hight}',
+        'G00 X0 Y0',
+        'M05',
+        'M30'
+    ]
 
-    final_contours = []
-    for c in contours:
-        areaContour = cv2.arcLength(c, True)
-        area_min = contour_minArcLength
-        area_max = 1000000000
-        if areaContour < area_min or area_max < areaContour:
-            continue
-        else:
-            final_contours.append(c)
-    return final_contours
+    # None Elemente entfernen und GCODE erstellen
+    return '\n'.join([line for line in gcode_lines if line != None])
 
-def image_to_gcode(dilated):
-    return generate_gcode(get_contours(dilated))
+def image_to_gcode(edge_image):
+    # Edge Approximation
+    edges_approx_contours = getEdgeApprox(edge_image)
+
+    # Shortest Path
+    ordered_contours = optimize_contour_order(edges_approx_contours)
+
+    # Generate GCODE
+    return generateGCODE(ordered_contours)
 
     

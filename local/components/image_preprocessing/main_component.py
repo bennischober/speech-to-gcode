@@ -28,10 +28,6 @@ def get_image_preprocessing_component():
                         html.H4('Kantenbild'),
                         html.Img(id='edges-image', className='img-thumbnail center_image')
                     ]),
-                    dbc.Col([
-                        html.H4('GCODE-Bild'),
-                        html.Img(id='dilated-image', className='img-thumbnail center_image')
-                    ]),
                 ], className='m-4 row_with_images'),
             ],
             className='mb-4'
@@ -42,8 +38,7 @@ def get_image_preprocessing_component():
           Output('gray-image', 'src'),
           Output('blurred-image', 'src'),
           Output('edges-image', 'src'),
-          Output('dilated-image', 'src'),
-          Output('base64_dilated_image_store', 'data'),
+          Output('base64_edge_image_store', 'data'),
           Input('base64_selected_stable_diff_img_store', 'data'))
 def process_image(selected_diff_image):
     if selected_diff_image is not None:
@@ -72,15 +67,8 @@ def process_image(selected_diff_image):
         _, edges_encoded = cv2.imencode('.png', edges)
         edges_base64 = base64.b64encode(edges_encoded).decode('utf-8')
 
-        # Kantenbreite (4 Pixel)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-        dilated = cv2.dilate(edges, kernel)
-        _, dilated_encoded = cv2.imencode('.png', dilated)
-        dilated_base64 = base64.b64encode(dilated_encoded).decode('utf-8')
-
         return f"data:image/png;base64,{original_base64}", \
             f"data:image/png;base64,{gray_base64}", \
             f"data:image/png;base64,{blurred_base64}", \
             f"data:image/png;base64,{edges_base64}", \
-            f"data:image/png;base64,{dilated_base64}", \
-            f"data:image/png;base64,{dilated_base64}"
+            f"data:image/png;base64,{edges_base64}"

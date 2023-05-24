@@ -4,6 +4,7 @@ from dash.dependencies import Input, Output, State
 import numpy as np
 import cv2
 import base64
+import pyperclip
 
 from components.image_to_gcode.converter import image_to_gcode
 from components.image_to_gcode.dynamic_layout import gcode_state_success_layout, gcode_state_error_layout, gcode_content_layout
@@ -35,22 +36,22 @@ def toggle_collapse1(n_clicks, is_open):
 @callback(
     Output('gcode_store', 'data'),
     State('base64_selected_stable_diff_img_store', 'data'),
-    Input('base64_dilated_image_store', 'data'),
+    Input('base64_edge_image_store', 'data'),
     prevent_initial_call=True
 )
-def update_code_list(org_base64, dilated_base64):
+def update_code_list(org_base64, edge_base64):
     # Convert base64 img to cv mat
     decoded_image = base64.b64decode(org_base64.split(',')[1])
     image_array = np.frombuffer(decoded_image, dtype=np.uint8)
-    org = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+    orginal_image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
-    dilated_decoded_image = base64.b64decode(dilated_base64.split(',')[1])
-    dilated_image_array = np.frombuffer(dilated_decoded_image, dtype=np.uint8)
-    dilated = cv2.imdecode(dilated_image_array, cv2.IMREAD_GRAYSCALE)
+    edge_decoded_image = base64.b64decode(edge_base64.split(',')[1])
+    edge_image_array = np.frombuffer(edge_decoded_image, dtype=np.uint8)
+    edge_image = cv2.imdecode(edge_image_array, cv2.IMREAD_GRAYSCALE)
 
     gcode_data = None
-    if dilated is not None and org is not None:
-        gcode_data = image_to_gcode(dilated)
+    if edge_image is not None and orginal_image is not None:
+        gcode_data = image_to_gcode(edge_image)
 
     return gcode_data
 
@@ -95,4 +96,15 @@ def load_gcode(gcode_data, gcode_content_layout):
     if gcode_content_layout == []:
         return no_update
     
-    return ''.join(gcode_data)
+    return gcode_data
+
+@callback(
+    Output("copy_gcode_button", "n_clicks"),
+    State("gcode_store", "data"),
+    Input("copy_gcode_button", "n_clicks")
+)
+def copy_to_clipboard(gcode, n_clicks):
+    if n_clicks is not None and n_clicks > 0:
+        pyperclip.copy(gcode)
+    
+    return n_clicks
