@@ -1,23 +1,64 @@
-from dash import html, callback, no_update
+from dash import html, callback, no_update, dcc
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 import numpy as np
 import cv2
 import base64
 import pyperclip
+import matplotlib.pyplot as plt
+import io
 
 from components.image_to_gcode.converter import image_to_gcode
-from components.image_to_gcode.dynamic_layout import gcode_state_success_layout, gcode_state_error_layout, gcode_content_layout
+from components.image_to_gcode.dynamic_layout import gcode_content_layout
 
 def get_image_to_gcode_component():
     return dbc.Card(
         children=[
             dbc.CardHeader('Image to GCode'),
-            html.Div(id='test'),
 
             dbc.CardBody([
-                html.Div([], id='gcode_state_layout'),
-                html.Div([], id='gcode_content_layout')
+                html.Div([
+                    html.Div(
+                        children=[
+                            html.H3('Status'),
+                            html.Div([
+                                html.H1("00:00:00", id='total_feeding_time', style={"font-size": "48px","margin-bottom": "10px","color": "#007bff"}),
+                                html.P("Gesamt-Fräszeit", style={"font-size": "18px", "color": "#6c757d"}),
+                            ], style={"margin": "30px 0 30px 0"}),
+                            html.Table(
+                                [
+                                    # html.Tr([html.Td(html.Strong("Fräßzeit:")), html.Td('00:00:00', id="fräzeit", style={"font-weight": "bold", "color": "purple", 'padding': '5px 5px 5px 15px'})]),
+                                    html.Tr([html.Td(html.Strong("Konturenanzahl:")), html.Td('0', id="amt_contours", style={"font-weight": "bold", "color": "purple", 'padding': '5px 5px 5px 15px'})]),
+                                    html.Tr([html.Td(html.Strong("GCODE-Zeilenanzahl:")), html.Td('0', id="amt_gcode_lines", style={"font-weight": "bold", "color": "purple", 'padding': '5px 5px 5px 15px'})]),
+                                    html.Tr([html.Td(html.Strong("G0-xy-Distanz:")), html.Td('0', id="g0_xy_distance", style={"font-weight": "bold", "color": "purple", 'padding': '5px 5px 5px 15px'})]),
+                                    html.Tr([html.Td(html.Strong("G0-z-Distanz:")), html.Td('0', id="g0_z_distance", style={"font-weight": "bold", "color": "purple", 'padding': '5px 5px 5px 15px'})]),
+                                    html.Tr([html.Td(html.Strong("G0 Fräszeit:")), html.Td('0', id="g0_feeding_time", style={"font-weight": "bold", "color": "purple", 'padding': '5px 5px 5px 15px'})]),
+                                    html.Tr([html.Td(html.Strong("G1-xy-Distanz:")), html.Td('0', id="g1_xy_distance", style={"font-weight": "bold", "color": "purple", 'padding': '5px 5px 5px 15px'})]),
+                                    html.Tr([html.Td(html.Strong("G1-z-Distanz:")), html.Td('0', id="g1_z_distance", style={"font-weight": "bold", "color": "purple", 'padding': '5px 5px 5px 15px'})]),
+                                    html.Tr([html.Td(html.Strong("G1 Fräszeit:")), html.Td('0', id="g1_feeding_time", style={"font-weight": "bold", "color": "purple", 'padding': '5px 5px 5px 15px'})]),
+                                ],
+                                id="output-table",
+                                className="table",
+                                style={"text-align": "left", "font-size": "120%"}
+                            ),
+                        ],
+                        style={'flex': '30%', 'padding': '20px'},
+                    ),
+                    html.Div(
+                        style={'flex': '70%', 'padding': '20px'},
+                        children=[
+                            html.H3('GCODE Bild'),
+                            dcc.Loading(
+                                id='loading-icon',
+                                type='default',
+                                children=[
+                                    html.Img(id='gcode_image', className='img-thumbnail')
+                                ]
+                            )
+                        ]
+                    )
+                ], style={'display': 'flex'}),
+                html.Div(gcode_content_layout, id='gcode_content_layout')
             ]),
         ],
         className='mb-4 card_image_to_gcode')
@@ -35,6 +76,8 @@ def toggle_collapse1(n_clicks, is_open):
 
 @callback(
     Output('gcode_store', 'data'),
+    Output('ordered_contours_store', 'data'),
+    Output('gcode_stats_store', 'data'),
     State('base64_selected_stable_diff_img_store', 'data'),
     Input('base64_edge_image_store', 'data'),
     prevent_initial_call=True
@@ -49,43 +92,12 @@ def update_code_list(org_base64, edge_base64):
     edge_image_array = np.frombuffer(edge_decoded_image, dtype=np.uint8)
     edge_image = cv2.imdecode(edge_image_array, cv2.IMREAD_GRAYSCALE)
 
-    gcode_data = None
+    gcode_data = None; ordered_contours = None; gcode_stats = None
     if edge_image is not None and orginal_image is not None:
-        gcode_data = image_to_gcode(edge_image)
+        gcode_data, ordered_contours, gcode_stats = image_to_gcode(edge_image)
 
-    return gcode_data
-
-@callback(
-    Output('gcode_state_layout', 'children'),
-    Output('recent_gcode_generated_successfully_store', 'data'),
-    State('recent_gcode_generated_successfully_store', 'data'),
-    Input('gcode_store', 'data'),
-    prevent_initial_call=True
-)
-def display_gcode_state_layout(recent_gcode_generated_successfully, gcode_data):
-    current_gcode_generated_successfully = True if gcode_data != None else False
-    if current_gcode_generated_successfully == recent_gcode_generated_successfully:
-        return no_update
-    
-    gcode_state_layout = gcode_state_success_layout if gcode_data != None else gcode_state_error_layout
-    return gcode_state_layout, current_gcode_generated_successfully
-
-@callback(
-    Output('gcode_content_layout', 'children'),
-    State('recent_gcode_generated_successfully_store', 'data'),
-    Input('gcode_store', 'data'),
-    prevent_initial_call=True
-)
-def load_gcode_content_layout(recent_gcode_generated_successfully, gcode_data):
-
-    current_gcode_generated_successfully = True if gcode_data != None else False
-    if current_gcode_generated_successfully == False:
-        return []
-
-    if current_gcode_generated_successfully == recent_gcode_generated_successfully:
-        return no_update
-    
-    return gcode_content_layout
+    print('???????', gcode_stats)
+    return gcode_data, ordered_contours, gcode_stats
 
 @callback(
     Output('gcode_visualization', 'children'),
@@ -108,3 +120,64 @@ def copy_to_clipboard(gcode, n_clicks):
         pyperclip.copy(gcode)
     
     return n_clicks
+
+@callback(
+    Output("total_feeding_time", "children"),
+    Output("amt_contours", "children"),
+    Output("amt_gcode_lines", "children"),
+    Output("g0_xy_distance", "children"),
+    Output("g0_z_distance", "children"),
+    Output("g0_feeding_time", "children"),
+    Output("g1_xy_distance", "children"),
+    Output("g1_z_distance", "children"),
+    Output("g1_feeding_time", "children"),
+    Input("gcode_stats_store", "data")
+)
+def display_gcode_stats(gcode_stats):
+    return \
+        gcode_stats['total_feeding_time'], \
+        gcode_stats['amt_contours'], \
+        gcode_stats['amt_gcode_lines'], \
+        gcode_stats['g0_xy_distance'], \
+        gcode_stats['g0_z_distance'], \
+        gcode_stats['g0_feeding_time'], \
+        gcode_stats['g1_xy_distance'], \
+        gcode_stats['g1_z_distance'], \
+        gcode_stats['g1_feeding_time']
+
+@callback(
+    Output('gcode_image', 'src'),
+    Input('ordered_contours_store', 'data'),
+    prevent_initial_call=True
+)
+def display_gcode_image(ordered_contours):
+    plt.close()
+
+    fig = plt.figure(figsize=( 512 / 50, 512 / 50))
+    fig.patch.set_facecolor('black')
+
+    for contour in ordered_contours:
+        contour = np.array(contour)
+        x_approx = contour[:, :, 0].flatten()
+        y_approx = contour[:, :, 1].flatten()
+        plt.plot(x_approx, y_approx, color='blue')
+
+    plt.gca().invert_yaxis()
+    plt.axis('off')
+
+    # Erstelle einen Bytes-Puffer
+    buffer = io.BytesIO()
+
+    # Speichere das Plot-Diagramm im Puffer
+    plt.savefig(buffer, format='png', bbox_inches='tight')
+
+    # Setze die Position des Puffers auf den Anfang
+    buffer.seek(0)
+
+    # Konvertiere das Plot-Diagramm in einen Base64-codierten String
+    plot_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+
+    # Schließe das Plot-Diagramm
+    plt.close()
+
+    return f"data:image/png;base64,{plot_base64}"

@@ -3,6 +3,7 @@ from dash import html, Input, Output, callback, dcc
 import cv2
 import base64
 import numpy as np
+from components.image_to_gcode.params import blurr_kernel_size
 
 dilated_img = None
 orginal_img = None 
@@ -58,7 +59,7 @@ def process_image(selected_diff_image):
         gray_base64 = base64.b64encode(gray_encoded).decode('utf-8')
 
         # Rauschen eliminieren
-        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        blurred =  cv2.GaussianBlur(gray, (blurr_kernel_size, blurr_kernel_size), 0)
         _, blurred_encoded = cv2.imencode('.png', blurred)
         blurred_base64 = base64.b64encode(blurred_encoded).decode('utf-8')
 

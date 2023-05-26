@@ -6,6 +6,7 @@ from components.stable_diffusion.main_component import get_stable_diffusion_comp
 from components.image_preprocessing.main_component import get_image_preprocessing_component
 from components.image_to_gcode.main_component import get_image_to_gcode_component
 from components.controlling.main_component import FuturisticButtons
+import matplotlib
 
 # Load Icons
 html.I(className='fas fa-microphone')
@@ -68,6 +69,19 @@ app.layout = html.Div(
                 dcc.Store(id='base64_selected_stable_diff_img_store', data=get_selected_preload_image()),
                 dcc.Store(id='base64_edge_image_store'),
                 dcc.Store(id='gcode_store'),
+                dcc.Store(id='ordered_contours_store'),
+                dcc.Store(id='gcode_stats_store', data={
+                    'total_feeding_time': '0.00:0.00:0.00',
+                    'amount_contours': 0,
+                    'amount_gcode_rows': 0,
+                    'total_distance': 0,
+                    'g0_xy_distance': 0,
+                    'g0_z_distance': 0,
+                    'g0_feeding_time': 0,
+                    'g1_xy_distance': 0,
+                    'g1_z_distance': 0,
+                    'g1_feeding_time': 0
+                }),
                 dcc.Store(id='recent_gcode_generated_successfully_store', data=None),
 
                 # The Components
@@ -91,4 +105,7 @@ app.layout = html.Div(
 )
 
 if __name__ == '__main__':
+    # is needed for gcode image
+    matplotlib.use('Agg')
+
     app.run(debug=True) # Maximale Länge der URL auf 1 MB setzen

@@ -1,43 +1,34 @@
 import numpy as np
 import cv2
 from scipy.spatial.distance import cdist
+from components.image_to_gcode.gcode_stats import get_gcode_stats
+from components.image_to_gcode.params import risize_factor, fixed_epsilon, use_dynamic_epsilon, epsilon_factor, max_epsilon, min_epsilon, start_point, z_safe_hight, z_working_hight, z_zero_height, z_feed_height, z_feed, xy_feed, spindle_speed
 
-# Image Preprocessing Params
-blurr_kernel_size = 5
-risize_factor = 2
-
-# Line Approximation Params
-fixed_epsilon = 1.0
-
-use_dynamic_epsilon = False
-epsilon_factor = 0.02
-max_epsilon = 2.5
-min_epsilon = 1.5
-
-# Shortest Path
-start_point = np.array([0, 0])
-
-# GCODE Params
-z_safe_hight = 10.0
-z_working_hight = 0.5
-z_depth = 3
-z_feed = 500
-xy_feed = 1000
-spindle_speed = 24000
-# Maximaler Vorschub ist ca. 3000 (immer bei G0) (3000mm pro Minute)
-
+def getDynamicEpsilon(contour, epsilon_factor, max_epsilon, min_epsilon):
+       # Area könnte auch verwendet werden
+       epsilon_tmp = epsilon_factor * cv2.arcLength(contour, True)
+       
+       if epsilon_tmp <= max_epsilon and epsilon_tmp >= min_epsilon:
+              return epsilon_tmp
+       elif epsilon_tmp > max_epsilon:
+              return max_epsilon
+       elif epsilon_tmp < min_epsilon:
+              return min_epsilon
+       
 def getEdgeApprox(edge_image):
        contours, _ = cv2.findContours(edge_image, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
        edge_approximations = []
 
        for i in range(len(contours)):
-              edge_approx = cv2.approxPolyDP(contours[i], fixed_epsilon, True)
-              
-              # remove last element if it is already in contour
-              if edge_approx[-1] in edge_approx[:len(edge_approx)-2]:
-                     edge_approx = edge_approx[:-1]
-              
-              edge_approximations.append(edge_approx)
+            epsilon = fixed_epsilon if use_dynamic_epsilon == False else getDynamicEpsilon(contours[i], epsilon_factor, max_epsilon, min_epsilon)
+
+            edge_approx = cv2.approxPolyDP(contours[i], epsilon, True)
+            
+            # remove last element if it is already in contour
+            if edge_approx[-1] in edge_approx[:len(edge_approx)-2]:
+                    edge_approx = edge_approx[:-1]
+            
+            edge_approximations.append(edge_approx)
        
        return edge_approximations
 
@@ -90,9 +81,9 @@ def generateGCODE(contours):
         gcode_lines += [
             f'######## Contour {i+1} ########',
             f'G00 X{edge_approx[0][0][0]} Y{edge_approx[0][0][1]}',
-            f'G00 Z{z_working_hight}' if i == 0 else None,
-            'G00 Z0',
-            f'G01 Z-3 F{z_feed}',
+            # f'G00 Z{z_working_hight}' if i == 0 else None,
+            f'G00 Z{z_zero_height}',
+            f'G01 Z{z_feed_height} F{z_feed}',
             f'G01 X{edge_approx[1][0][0]} Y{edge_approx[1][0][1]} F{xy_feed}' if len(edge_approx) > 1 else None,
             *[f'G01 X{edge[0][0]} Y{edge[0][1]}' for edge in edge_approx[2:]],
             f'G00 Z{z_working_hight}'
@@ -108,16 +99,24 @@ def generateGCODE(contours):
     ]
 
     # None Elemente entfernen und GCODE erstellen
-    return '\n'.join([line for line in gcode_lines if line != None])
+    return gcode_lines
 
 def image_to_gcode(edge_image):
+    # Resize Image
+    resized_edge_image = cv2.resize(edge_image, (edge_image.shape[1] // risize_factor, edge_image.shape[0] // risize_factor))
+
     # Edge Approximation
-    edges_approx_contours = getEdgeApprox(edge_image)
+    edges_approx_contours = getEdgeApprox(resized_edge_image)
 
     # Shortest Path
     ordered_contours = optimize_contour_order(edges_approx_contours)
 
     # Generate GCODE
-    return generateGCODE(ordered_contours)
+    gcode_lines = generateGCODE(ordered_contours)
+    gcode = '\n'.join([line for line in gcode_lines if line != None])
+
+    # Total feeding time
+    gcode_stats = get_gcode_stats(ordered_contours, gcode_lines)
+    return gcode, ordered_contours, gcode_stats
 
     

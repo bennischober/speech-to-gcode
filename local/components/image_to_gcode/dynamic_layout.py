@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 
 gcode_state_success_layout = [
     html.Div("GCode erfolgreich erstellt!", style={'font-size': '15px'}),
+    html.Div(id="gcode_feeding_time_output"),
     html.Div(
         html.I(
             className='bi bi-check-lg gcode_status_icon gcode_status_success',
@@ -36,7 +37,5 @@ gcode_content_layout = [
             html.Pre(
                 id='gcode_visualization', children=[], className='gcode_style')
         ]),
-    ], style={'background': '#ffffff', 'margin': 'auto', 'width': '60vw'}, id="show_gcode", is_open=False),
-    html.Div("Bereit zum Fräßen!"),
-    html.Div("Klicken Sie auf     -Erneute Aufnahme-     um ein weiteres Bild zu generieren!"),
+    ], style={'background': '#ffffff', 'margin': 'auto', 'width': '60vw'}, id="show_gcode", is_open=False)
 ]
