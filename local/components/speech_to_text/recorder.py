@@ -1,4 +1,3 @@
-import io
 import os
 import queue
 import threading
@@ -6,9 +5,9 @@ from utils.config import STT_ENDPOINT
 import utils.logger as logger
 import sounddevice as sd
 import soundfile as sf
-import tempfile
 import requests
-
+import numpy as np
+import librosa
 
 
 class Recorder:
@@ -56,24 +55,22 @@ class Recorder:
 
         self.log.info("All threads stopped")
 
-        data, _ = sf.read(io.BytesIO(b"".join(list(self.input_queue.queue))), dtype=self.format,
-                          samplerate=self.rate, channels=self.channels, format="RAW", subtype='PCM_16')
+        raw_audio = np.frombuffer(b"".join(list(self.input_queue.queue)), dtype=np.int16)
+        converted_audio = raw_audio.astype(np.float32)
+        audio = librosa.resample(converted_audio, orig_sr=self.rate, target_sr=16000)
 
-        # Write audio data to a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
-            sf.write(tmp_file.name, data, self.rate)
+        file_path = os.path.join(os.path.dirname(__file__), "audio.wav")
 
-            self.log.info(
-                "Wrote audio data to temporary file {}".format(tmp_file.name))
+        sf.write(file_path, audio, 16000, subtype='PCM_16')
 
-            with open(tmp_file.name, "rb") as f:
-                response = requests.post(STT_ENDPOINT, files={"file": f})
-                self.log.info("Response: {}".format(response.text))
+        # clear the queue
+        self.input_queue.queue.clear()
 
-        # cleanup temporary file
-        tmp_file.close()
-        os.remove(tmp_file.name)
-        self.log.info("Closed temporary file {}".format(tmp_file.name))
+        # make request
+        with open(file_path, "rb") as f:
+            self.log.info("Sending audio data to STT endpoint: %s", STT_ENDPOINT)
+            response = requests.post(STT_ENDPOINT, files={"audio": f})
+            self.log.info("Response: {}".format(response.text))
 
         return response.text
 

@@ -5,11 +5,12 @@ import zipfile
 from pipeline.image.stable_diffusion import generate_image
 from pipeline.image.laion_prediction import predict_score
 from pipeline.text.speech_to_text import transcribe
-from pipeline.text.translate import translate
 
 app = Flask(__name__)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# ToDo: add segment_anything (test in separate docker container first); add continuous learning (see ChatGPT)
 
 @app.route('/stable_diff', methods=['POST'])
 def image_endpoint():
@@ -26,7 +27,7 @@ def image_endpoint():
 
     images = []
 
-    while images.count() < 4:
+    while len(images) < 4:
         # run stable_diffusion pipeline
         image = generate_image(prompt, negative_prompt, width, height, num_inference_steps, guidance_scale)
 
@@ -40,19 +41,20 @@ def image_endpoint():
         if score > 0.7:
             images.append(image)
 
+    print(len(images))
 
-    # Create ZIP file
     zip_data = io.BytesIO()
     with zipfile.ZipFile(zip_data, mode='w') as zip_file:
         for i, image in enumerate(images):
             filename = f'image_{i}.jpg'
             img_data = io.BytesIO()
             image.save(img_data, 'JPEG')
-            zip_file.writestr(filename, img_data.getvalue())
+            img_data.seek(0)  # Important to reset the stream position to the beginning
+            zip_file.writestr(filename, img_data.read())  # Use `read()` instead of `getvalue()`
 
     # Return ZIP file
     zip_data.seek(0)
-    response = make_response(zip_data.getvalue())
+    response = make_response(zip_data.read())
     response.headers.set('Content-Type', 'application/zip')
     response.headers.set('Content-Disposition', 'attachment', filename='generated_images.zip')
     return response
@@ -70,20 +72,20 @@ def transcribe_endpoint():
 
     return text
 
-@app.route("/api/translate", methods=['POST'])
-def translate_endpoint():
-    params = request.json
-    text = params.get('text', None)
+# @app.route("/api/translate", methods=['POST'])
+# def translate_endpoint():
+#     params = request.json
+#     text = params.get('text', None)
 
-    if text is None:
-        return "No text provided", 400
+#     if text is None:
+#         return "No text provided", 400
 
-    output = translate(text, app.logger)
+#     output = translate(text, app.logger)
 
-    if output is None:
-        return "Error translating text", 500
+#     if output is None:
+#         return "Error translating text", 500
 
-    return output
+#     return output
 
 
 if __name__ == '__main__':
