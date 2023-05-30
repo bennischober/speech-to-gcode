@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 from scipy.spatial.distance import cdist
 from components.image_to_gcode.gcode_stats import get_gcode_stats
-from components.image_to_gcode.params import risize_factor, fixed_epsilon, use_dynamic_epsilon, epsilon_factor, max_epsilon, min_epsilon, start_point, z_safe_hight, z_working_hight, z_zero_height, z_feed_height, z_feed, xy_feed, spindle_speed
+from components.image_to_gcode.params import resize_factor, fixed_epsilon, use_dynamic_epsilon, epsilon_factor, max_epsilon, min_epsilon, start_point, z_safe_hight, z_working_hight, z_zero_height, z_feed_height, z_feed, xy_feed, spindle_speed
 
 def getDynamicEpsilon(contour, epsilon_factor, max_epsilon, min_epsilon):
        # Area könnte auch verwendet werden
@@ -80,12 +80,12 @@ def generateGCODE(contours):
     for i, edge_approx in enumerate(contours):
         gcode_lines += [
             f'######## Contour {i+1} ########',
-            f'G00 X{edge_approx[0][0][0]} Y{edge_approx[0][0][1]}',
+            f'G00 X{edge_approx[0][0][0] * resize_factor} Y{edge_approx[0][0][1] * resize_factor}',
             # f'G00 Z{z_working_hight}' if i == 0 else None,
             f'G00 Z{z_zero_height}',
             f'G01 Z{z_feed_height} F{z_feed}',
-            f'G01 X{edge_approx[1][0][0]} Y{edge_approx[1][0][1]} F{xy_feed}' if len(edge_approx) > 1 else None,
-            *[f'G01 X{edge[0][0]} Y{edge[0][1]}' for edge in edge_approx[2:]],
+            f'G01 X{edge_approx[1][0][0] * resize_factor} Y{edge_approx[1][0][1] * resize_factor} F{xy_feed}' if len(edge_approx) > 1 else None,
+            *[f'G01 X{edge[0][0] * resize_factor} Y{edge[0][1] * resize_factor}' for edge in edge_approx[2:]],
             f'G00 Z{z_working_hight}'
         ]
 
@@ -103,10 +103,10 @@ def generateGCODE(contours):
 
 def image_to_gcode(edge_image, params):
     # Resize Image
-    resized_edge_image = cv2.resize(edge_image, (edge_image.shape[1] // risize_factor, edge_image.shape[0] // risize_factor))
+    # resized_edge_image = cv2.resize(edge_image, (edge_image.shape[1] // resize_factor, edge_image.shape[0] // resize_factor))
 
     # Edge Approximation
-    edges_approx_contours = getEdgeApprox(resized_edge_image, params['epsilon'])
+    edges_approx_contours = getEdgeApprox(edge_image, params['epsilon'])
 
     # Shortest Path
     ordered_contours = optimize_contour_order(edges_approx_contours)

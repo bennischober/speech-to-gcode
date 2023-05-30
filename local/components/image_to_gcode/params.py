@@ -2,7 +2,10 @@ import numpy as np
 
 # Image Preprocessing Params
 blurr_kernel_size = 5
-risize_factor = 2
+
+image_size = 512
+gcode_size = 300
+resize_factor = gcode_size / image_size
 
 # Line Approximation Params
 fixed_epsilon = 2.5

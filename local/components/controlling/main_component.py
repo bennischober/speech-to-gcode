@@ -25,7 +25,7 @@ button_click_style = {
 def FuturisticButtons():
     return html.Div([
         html.Div([
-            html.Button('Fräßen', id='button-1', style=button_style),
+            html.Button('Fräsen', id='button-1', style=button_style),
             html.Button('Speichern', id='button-2', style=button_style),
         ], 
        ),
