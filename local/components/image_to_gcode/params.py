@@ -5,7 +5,7 @@ blurr_kernel_size = 5
 risize_factor = 2
 
 # Line Approximation Params
-fixed_epsilon = 0.0
+fixed_epsilon = 2.5
 
 use_dynamic_epsilon = False
 epsilon_factor = 0.02

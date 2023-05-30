@@ -15,7 +15,7 @@ def getDynamicEpsilon(contour, epsilon_factor, max_epsilon, min_epsilon):
        elif epsilon_tmp < min_epsilon:
               return min_epsilon
        
-def getEdgeApprox(edge_image):
+def getEdgeApprox(edge_image, fixed_epsilon):
        contours, _ = cv2.findContours(edge_image, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
        edge_approximations = []
 
@@ -26,7 +26,7 @@ def getEdgeApprox(edge_image):
             
             # remove last element if it is already in contour
             if edge_approx[-1] in edge_approx[:len(edge_approx)-2]:
-                    edge_approx = edge_approx[:-1]
+                edge_approx = edge_approx[:-1]
             
             edge_approximations.append(edge_approx)
        
@@ -101,12 +101,12 @@ def generateGCODE(contours):
     # None Elemente entfernen und GCODE erstellen
     return gcode_lines
 
-def image_to_gcode(edge_image):
+def image_to_gcode(edge_image, params):
     # Resize Image
     resized_edge_image = cv2.resize(edge_image, (edge_image.shape[1] // risize_factor, edge_image.shape[0] // risize_factor))
 
     # Edge Approximation
-    edges_approx_contours = getEdgeApprox(resized_edge_image)
+    edges_approx_contours = getEdgeApprox(resized_edge_image, params['epsilon'])
 
     # Shortest Path
     ordered_contours = optimize_contour_order(edges_approx_contours)
