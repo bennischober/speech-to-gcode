@@ -4,7 +4,7 @@ import numpy as np
 blurr_kernel_size = 5
 
 image_size = 512
-gcode_size = 300
+gcode_size = 120
 resize_factor = gcode_size / image_size
 
 # Line Approximation Params
@@ -20,9 +20,9 @@ start_point = np.array([0, 0])
 
 # GCODE Params
 z_safe_hight = 10.0
-z_working_hight = 0.5
-z_zero_height = 0
-z_feed_height = -3
+z_working_hight = 1.5
+z_zero_height = 0.1
+z_feed_height = 0
 z_feed = 500
 xy_feed = 1000
 spindle_speed = 24000
