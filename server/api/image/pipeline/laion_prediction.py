@@ -5,6 +5,8 @@ from urllib.request import urlretrieve
 from os.path import expanduser
 import open_clip
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
 # create model to predict aesthetic score
 def _get_aesthetic_model(clip_model="vit_l_14"):
     """load the aethetic model"""
@@ -26,9 +28,8 @@ def _get_aesthetic_model(clip_model="vit_l_14"):
     s = torch.load(path_to_model)
     m.load_state_dict(s)
     m.eval()
+    m = m.to(device)
     return m
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
 
 predict_model = _get_aesthetic_model(clip_model="vit_l_14")
 predict_model.eval()
@@ -37,7 +38,9 @@ feature_model, _, feature_preprocess = open_clip.create_model_and_transforms('Vi
 
 # predict aesthetic score
 def predict_score(image):
-    img = feature_preprocess(image).unsqueeze(0).to("cuda")
+    print(device)
+
+    img = feature_preprocess(image).unsqueeze(0).to(device)
     with torch.no_grad():
         image_features = feature_model.encode_image(img)
         image_features /= image_features.norm(dim=-1, keepdim=True)

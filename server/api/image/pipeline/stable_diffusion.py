@@ -4,7 +4,7 @@ from logging import Logger
 
 # Load Model and generate Pipeline
 model_id = "runwayml/stable-diffusion-v1-5"
-pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16)
+pipe = StableDiffusionPipeline.from_pretrained(model_id, revision="fp16",torch_dtype=torch.float16)
 pipe = pipe.to("cuda")
 
 def generate_image(prompt: str,
@@ -13,8 +13,12 @@ def generate_image(prompt: str,
                    height: int = 512,
                    num_inference_steps: int = 15,
                    guidance_scale: int = 9,
+                   num_images_per_prompt: int = 10,
                    logger: Logger = None):
     """Generate images from a prompt"""
+    if logger:
+        logger.info("Calling generate_image")
+
     try:
         result = pipe(
             prompt,
@@ -23,14 +27,14 @@ def generate_image(prompt: str,
             height=height,
             num_inference_steps=num_inference_steps,
             guidance_scale=guidance_scale,
-            num_images_per_prompt=1)
+            num_images_per_prompt=num_images_per_prompt)
         
-        image = result.images[0]
+        images = result.images
 
         if logger:
-            logger.info(f"Image generated successfully")
+            logger.info(f"{len(images)} Image generated successfully!")
 
-        return image
+        return images
     
     except Exception as e:
         if logger:

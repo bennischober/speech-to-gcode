@@ -1,6 +1,5 @@
 from logging import Logger
 from transformers import WhisperProcessor, WhisperForConditionalGeneration
-import numpy as np
 import soundfile as sf
 import librosa
 
@@ -12,6 +11,7 @@ whisper_model = WhisperForConditionalGeneration.from_pretrained(stt_model_id).to
 
 def transcribe(file, logger: Logger = None):
     try:
+        # audio file could have different sampling rate; resample to 16kHz
         audio, rate = sf.read(file.stream)
         if rate != 16000:
             audio = librosa.resample(audio, rate, 16000)
@@ -27,8 +27,8 @@ def transcribe(file, logger: Logger = None):
     
     except Exception as e:
         if logger:
-            logger.error(f"Error generating text: {e}")
+            logger.error("Error generating text: %s", e)
         else:
-            print(f"Error generating text: {e}")
+            print("Error generating text: %s", e)
 
         return None
