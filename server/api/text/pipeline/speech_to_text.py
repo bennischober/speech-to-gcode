@@ -1,11 +1,12 @@
 from logging import Logger
 from transformers import WhisperProcessor, WhisperForConditionalGeneration
+import torch
 import soundfile as sf
 import librosa
 
 # Load Speech to Text model
 # reference: https://huggingface.co/openai/whisper-large#english-to-english
-stt_model_id = "openai/whisper-large-v2"
+stt_model_id = "openai/whisper-medium"
 whisper_processor = WhisperProcessor.from_pretrained(stt_model_id)
 whisper_model = WhisperForConditionalGeneration.from_pretrained(stt_model_id).to("cuda")
 
@@ -22,6 +23,9 @@ def transcribe(file, logger: Logger = None):
 
         if logger:
             logger.info("Text generated: %s", generated_text)
+        
+        # Clear VRAM
+        torch.cuda.empty_cache()
 
         return generated_text
     
