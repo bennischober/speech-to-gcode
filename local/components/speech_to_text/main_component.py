@@ -57,7 +57,14 @@ def get_speech_to_text_component():
                             className="mb-5",
                         ),
                         html.Hr(),
-                        html.H5(id="current-prompt", children="Aktuelle Eingabe: "),
+                        html.Div(children=[
+                            html.Span(children=[
+                                html.H5("Aktuelle Eingabe: "),
+                            ], style={'display': 'inline-block', 'margin-right': '10px'}),
+                            html.Span(children=[
+                                html.H5(id="current-prompt")
+                            ], style={'display': 'inline-block'}),
+                        ]),
                         html.Hr(),
                         dbc.Row(
                             [
@@ -65,7 +72,8 @@ def get_speech_to_text_component():
                                                     color="primary", className="mt-3")], className="text-center"),
                                 dbc.Col([dbc.Button(id="reset-inputs", children="Eingaben zurücksetzen",
                                                     color="danger", className="mt-3")], className="text-center"),
-                                dbc.Col([settings_button], className="text-center"),
+                                dbc.Col([settings_button],
+                                        className="text-center"),
                             ],
                             className="mb-5",
                         ),
@@ -93,9 +101,9 @@ def get_speech_to_text_component():
 )
 def update_current_prompt(text_input, current_class):
     if 'fas fa-microphone' in current_class:
-        return f"Current Prompt: {text_input}"
+        return text_input
     else:
-        return f"Current Prompt: {recorder.get_latest_recording()}"
+        return recorder.get_latest_recording()
 
 
 @callback(
@@ -136,6 +144,7 @@ def save_or_reset(images_click: int, reset_click: int, settings: dict, input: st
     Output('toggle-output', 'children'),
     Output("toggle-button", "disabled"),
     Output("text-input", "disabled"),
+    Output("current-prompt", "children", allow_duplicate=True),
     Input('toggle-button', 'n_clicks'),
     Input("text-input", "value"),
     State('toggle-icon', 'className'),
@@ -159,6 +168,6 @@ def toggle_icon(mic_click: int, text_input: str, current_class: str):
             text_disabled = False
             text = recorder.stop_recording()
 
-        return text or dash.no_update, new_class, recording_status, bool(text_input), text_disabled
+        return text or dash.no_update, new_class, recording_status, bool(text_input), text_disabled, text or dash.no_update
 
-    return text or dash.no_update, current_class, 'Aufnahme starten', bool(text_input), text_disabled
+    return text or dash.no_update, current_class, 'Aufnahme starten', bool(text_input), text_disabled, text or dash.no_update
