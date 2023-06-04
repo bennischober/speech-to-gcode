@@ -19,6 +19,7 @@ class Recorder:
         self.input_queue = queue.Queue()
         self.recording = False
         self.log = logger.get_logger(__name__)
+        self.latest_recording = None
 
     def callback(self, indata, frames, time, status):
         if status:
@@ -72,6 +73,12 @@ class Recorder:
             response = requests.post(STT_ENDPOINT, files={"audio": f})
             self.log.info("Response: {}".format(response.text))
 
+        # set latest recording value
+        self.latest_recording = response.text
+
         return response.text
+
+    def get_latest_recording(self):
+        return self.latest_recording
 
 recorder = Recorder()

@@ -9,3 +9,7 @@ _root_uri = _config.get('ENDPOINTS', 'RootUri')
 
 SD_ENDPOINT = _root_uri + _config.get('ENDPOINTS', 'StableDiffusion')
 STT_ENDPOINT = _root_uri + _config.get('ENDPOINTS', 'SpeechToText')
+
+# prompts
+POSITIVE_PROMPTS = _config.get('PROMPTS', 'Positive').split(',')
+NEGATIVE_PROMPTS = _config.get('PROMPTS', 'Negative').split(',')
