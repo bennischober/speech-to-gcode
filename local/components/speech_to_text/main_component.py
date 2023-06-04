@@ -94,6 +94,10 @@ def save_or_reset(images_click: int, reset_click: int, settings: dict, input: st
     if triggered_id == "generate-image":
         prompt: list[str] = positive.copy()
         prompt.append(input)
+        # map prompt and negative to whitespace seperated string
+        prompt = " ".join(prompt)
+        negative = " ".join(negative)
+
         diffusion_prompt = {'prompt': prompt, 'negative': negative}
         if history is None:
             history = []
