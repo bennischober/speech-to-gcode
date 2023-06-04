@@ -22,7 +22,8 @@ def get_stable_diffusion_component():
                         html.H4('Bild 1', style={"textAlign": "center"}),
                         dcc.Loading(
                             dbc.Button(
-                                html.Img(id='stable_diff_img_1', className='img-thumbnail center_image', src=preloaded_images[0]),
+                                html.Img(
+                                    id='stable_diff_img_1', className='img-thumbnail center_image', src=preloaded_images[0]),
                                 id='button_diff_img_1', className='clickable_image_button')
                         )
                     ]),
@@ -30,7 +31,8 @@ def get_stable_diffusion_component():
                         html.H4('Bild 2', style={"textAlign": "center"}),
                         dcc.Loading(
                             dbc.Button(
-                                html.Img(id='stable_diff_img_2', className='img-thumbnail center_image', src=preloaded_images[1]),
+                                html.Img(
+                                    id='stable_diff_img_2', className='img-thumbnail center_image', src=preloaded_images[1]),
                                 id='button_diff_img_2', className='clickable_image_button')
                         )
                     ]),
@@ -38,7 +40,8 @@ def get_stable_diffusion_component():
                         html.H4('Bild 3', style={"textAlign": "center"}),
                         dcc.Loading(
                             dbc.Button(
-                                html.Img(id='stable_diff_img_3', className='img-thumbnail center_image', src=preloaded_images[2]),
+                                html.Img(
+                                    id='stable_diff_img_3', className='img-thumbnail center_image', src=preloaded_images[2]),
                                 id='button_diff_img_3', className='clickable_image_button')
                         )
                     ]),
@@ -46,32 +49,41 @@ def get_stable_diffusion_component():
                         html.H4('Bild 4', style={"textAlign": "center"}),
                         dcc.Loading(
                             dbc.Button(
-                                html.Img(id='stable_diff_img_4', className='img-thumbnail center_image', src=preloaded_images[3]),
+                                html.Img(
+                                    id='stable_diff_img_4', className='img-thumbnail center_image', src=preloaded_images[3]),
                                 id='button_diff_img_4', className='clickable_image_button')
                         )
                     ]),
                 ]),
-                dbc.Button("Bilder neu laden", id='generate_diff_imges', className="mt-3"),
+                dbc.Button("Bilder neu laden",
+                           id='generate_diff_imges', className="mt-3"),
             ], style={'width': '100%', 'padding': '20px 20px 20px 20px'}),
         ],
         className='mb-4'
     )
 
+
 def get_selected_preload_image():
     return preloaded_images[0]
 
 # Callback to extract images from ZIP file and store in base64 format
+
+
 @callback(
     Output('stable_diff_img_1', 'src'),
     Output('stable_diff_img_2', 'src'),
     Output('stable_diff_img_3', 'src'),
     Output('stable_diff_img_4', 'src'),
+    Output('notification-toast', 'header'),
+    Output('notification-toast', 'children'),
+    Output('notification-toast', 'icon'),
+    Output('notification-toast', 'is_open'),
     Input('diffusion_prompt', 'data'),
     Input('generate_diff_imges', 'n_clicks')
 )
 def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
     if n_clicks is None and diffusion_prompt is None:
-        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
     # Define the API endpoint
     url = SD_ENDPOINT
@@ -83,7 +95,10 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
     }
 
     # Send the API request
-    response = requests.post(url, json=data)
+    try:
+        response = requests.post(url, json=data)
+    except requests.exceptions.ConnectionError:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, "Fehler", "Verbindung zum Server konnte nicht hergestellt werden.", "danger", True
 
     # Extract images from ZIP file and store in base64 format
     image_stores = []
@@ -98,7 +113,8 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
     return f"data:image/png;base64,{image_stores[0]}", \
            f"data:image/png;base64,{image_stores[1]}", \
            f"data:image/png;base64,{image_stores[2]}", \
-           f"data:image/png;base64,{image_stores[3]}"
+           f"data:image/png;base64,{image_stores[3]}", \
+        "Erfolgreich", "Bilder wurden erfolgreich generiert.", "success", True
 
 
 @callback(Output('base64_selected_stable_diff_img_store', 'data', allow_duplicate=True),

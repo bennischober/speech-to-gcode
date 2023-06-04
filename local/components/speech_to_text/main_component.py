@@ -57,7 +57,8 @@ def get_speech_to_text_component():
                             className="mb-5",
                         ),
                         html.Hr(),
-                        html.H5(id="current-prompt", children="Aktuelle Eingabe: "),
+                        html.H5(id="current-prompt",
+                                children="Aktuelle Eingabe: "),
                         html.Hr(),
                         dbc.Row(
                             [
@@ -65,7 +66,8 @@ def get_speech_to_text_component():
                                                     color="primary", className="mt-3")], className="text-center"),
                                 dbc.Col([dbc.Button(id="reset-inputs", children="Eingaben zurücksetzen",
                                                     color="danger", className="mt-3")], className="text-center"),
-                                dbc.Col([settings_button], className="text-center"),
+                                dbc.Col([settings_button],
+                                        className="text-center"),
                             ],
                             className="mb-5",
                         ),
@@ -127,7 +129,7 @@ def save_or_reset(images_click: int, reset_click: int, settings: dict, input: st
             return dash.no_update, dash.no_update, '', diffusion_prompt
         # generate image
         return POSITIVE_PROMPTS, NEGATIVE_PROMPTS, '', diffusion_prompt
-    return POSITIVE_PROMPTS, NEGATIVE_PROMPTS, '', None, dash.no_update
+    return POSITIVE_PROMPTS, NEGATIVE_PROMPTS, '', None
 
 
 @callback(
@@ -136,6 +138,10 @@ def save_or_reset(images_click: int, reset_click: int, settings: dict, input: st
     Output('toggle-output', 'children'),
     Output("toggle-button", "disabled"),
     Output("text-input", "disabled"),
+    Output('notification-toast', 'header', allow_duplicate=True),
+    Output('notification-toast', 'children', allow_duplicate=True),
+    Output('notification-toast', 'icon', allow_duplicate=True),
+    Output('notification-toast', 'is_open', allow_duplicate=True),
     Input('toggle-button', 'n_clicks'),
     Input("text-input", "value"),
     State('toggle-icon', 'className'),
@@ -157,8 +163,12 @@ def toggle_icon(mic_click: int, text_input: str, current_class: str):
             t.start()
         else:
             text_disabled = False
-            text = recorder.stop_recording()
+            res = recorder.stop_recording()
+            if res.status_code == 200:
+                return res.json()['text'], new_class, recording_status, bool(text_input), text_disabled, "Erfolgreich", [html.P("Aufnahme erfolgreich beendet.", className="mb-0")], "success", True
+            elif res.status_code == 400:
+                return text or dash.no_update, new_class, recording_status, bool(text_input), text_disabled, "Fehler", [html.P("Aufnahme fehlgeschlagen.", className="mb-0")], "danger", True
 
-        return text or dash.no_update, new_class, recording_status, bool(text_input), text_disabled
+        return text or dash.no_update, new_class, recording_status, bool(text_input), text_disabled, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
-    return text or dash.no_update, current_class, 'Aufnahme starten', bool(text_input), text_disabled
+    return text or dash.no_update, current_class, 'Aufnahme starten', bool(text_input), text_disabled, dash.no_update, dash.no_update, dash.no_update, dash.no_update

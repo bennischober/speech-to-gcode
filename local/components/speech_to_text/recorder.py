@@ -76,7 +76,7 @@ class Recorder:
         # set latest recording value
         self.latest_recording = response.text
 
-        return response.text
+        return response
 
     def get_latest_recording(self):
         return self.latest_recording
