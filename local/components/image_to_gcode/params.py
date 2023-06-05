@@ -3,7 +3,7 @@ import numpy as np
 # Image Preprocessing Params
 blurr_kernel_size = 5
 
-image_size = 512
+image_size = 720
 gcode_size = 120
 resize_factor = gcode_size / image_size
 

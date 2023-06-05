@@ -28,7 +28,21 @@ h4 {
   padding: 0px 5px 5px 0px;
 }
 
+
+
 /* Image to GCode */
+.gcode_param_div {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  margin: 5px 0 5px 0;
+}
+
+.gcode_param_label {
+  text-align: left;
+  width: 100%;
+}
+
 .card_image_to_gcode {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   text-align: center;
@@ -68,6 +82,9 @@ h4 {
   margin-bottom: 20px; 
   color: #ffffff;
 }
+
+
+
 
 
 
