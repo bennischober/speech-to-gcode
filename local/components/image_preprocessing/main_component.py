@@ -30,8 +30,7 @@ def get_image_preprocessing_component():
                         html.Img(id='edges-image', className='img-thumbnail center_image')
                     ]),
                 ], className='m-4 row_with_images'),
-            ],
-            className='mb-4'
+            ]
         )
 
 @callback(

@@ -22,7 +22,8 @@ def getEdgeApprox(edge_image, fixed_epsilon):
        for i in range(len(contours)):
             epsilon = fixed_epsilon if use_dynamic_epsilon == False else getDynamicEpsilon(contours[i], epsilon_factor, max_epsilon, min_epsilon)
 
-            edge_approx = cv2.approxPolyDP(contours[i], epsilon, True)
+            # Der Parameter False ist Wichtig, dadurch sind die Eckpunkte in der gleichen Reihenfolge wie die Kontur
+            edge_approx = cv2.approxPolyDP(contours[i], epsilon, False)
             
             # remove last element if it is already in contour
             if edge_approx[-1] in edge_approx[:len(edge_approx)-2]:
