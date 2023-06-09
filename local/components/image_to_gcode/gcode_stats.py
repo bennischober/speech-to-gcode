@@ -55,9 +55,9 @@ def get_gcode_stats(contours, gcode, params):
     g1_xy_distance = calculate_g1_distance(contours, params)
     g0_z_distance, g1_z_distance = calculate_z_distance(contours, params)
 
-    total_feeding_time = (g0_xy_distance / params['g0_feed']) + (g1_xy_distance / params['xy_feed']) + (g0_z_distance / params['g0_feed']) + (g1_z_distance / params['z_feed'])
-    g0_feeding_time = (g0_xy_distance / params['g0_feed']) + (g0_z_distance / params['g0_feed'])
-    g1_feeding_time = (g1_xy_distance / params['xy_feed']) + (g1_z_distance / params['z_feed'])
+    total_feeding_time = ((g0_xy_distance / params['g0_feed']) + (g1_xy_distance / params['xy_feed']) + (g0_z_distance / params['g0_feed']) + (g1_z_distance / params['z_feed'])) * FIXED_PARAMS['est_time_corr_factor']
+    g0_feeding_time = ((g0_xy_distance / params['g0_feed']) + (g0_z_distance / params['g0_feed'])) * FIXED_PARAMS['est_time_corr_factor'] 
+    g1_feeding_time = ((g1_xy_distance / params['xy_feed']) + (g1_z_distance / params['z_feed'])) * FIXED_PARAMS['est_time_corr_factor']
 
     return {
         'total_feeding_time': convert_min_to_time(total_feeding_time),

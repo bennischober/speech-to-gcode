@@ -3,7 +3,6 @@ from dash import html, Input, Output, callback, dcc, State
 import cv2
 import base64
 import numpy as np
-from components.image_to_gcode.params import blurr_kernel_size
 
 dilated_img = None
 orginal_img = None 
