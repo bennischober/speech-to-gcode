@@ -7,6 +7,8 @@ import io
 import os
 from utils.config import SD_ENDPOINT
 
+import json
+
 preloaded_images = None
 with open(os.path.join(os.path.dirname(__file__), "preloaded_images.txt"), "r") as file:
     preloaded_images = eval(file.read())
@@ -94,6 +96,10 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
                 image_bytes = image_file.read()
                 image_base64 = base64.b64encode(image_bytes).decode('utf-8')
                 image_stores.append(image_base64)
+
+    # Create new preloaded images
+    # with open("components/stable_diffusion/preloaded_images2.txt", "w") as file:
+    #     file.write(json.dumps(image_stores))
 
     return f"data:image/png;base64,{image_stores[0]}", \
            f"data:image/png;base64,{image_stores[1]}", \

@@ -1,6 +1,10 @@
 import numpy as np
-# from components.image_to_gcode.params import z_safe_hight, z_working_hight, z_zero_height, z_feed_height, g0_feed, xy_feed, z_feed 
+from utils.config import FIXED_PARAMS
+
 def calculate_g0_distance(contours, params):
+    # calc resize factor
+    rf = params['gcode_size'] / FIXED_PARAMS['image_size']
+
     total_distance = 0
     start_end_point = np.array([0, 0])
     recent_contour_end = start_end_point
@@ -8,7 +12,7 @@ def calculate_g0_distance(contours, params):
     for contour in contours:
         contour_points = contour.squeeze()
         start = contour_points[0] # set startPoint of Contour
-        total_distance += np.linalg.norm(start * params['resize_factor'] - recent_contour_end * params['resize_factor'])  # Calc euklidian dinstance
+        total_distance += np.linalg.norm(start * rf - recent_contour_end * rf)  # Calc euklidian dinstance
         recent_contour_end = contour_points[-1] # set endPoint of Contour
 
     total_distance += np.linalg.norm(np.array([0, 0]) - recent_contour_end)
@@ -16,6 +20,9 @@ def calculate_g0_distance(contours, params):
     return total_distance
 
 def calculate_g1_distance(contours, params):
+    # calc resize factor
+    rf = params['gcode_size'] / FIXED_PARAMS['image_size']
+    
     total_distance = 0
 
     for contour in contours:
@@ -23,7 +30,7 @@ def calculate_g1_distance(contours, params):
         recent_point = contour[0]
 
         for point in contour[1:]:
-            total_distance += np.linalg.norm(recent_point * params['resize_factor'] - point * params['resize_factor'])
+            total_distance += np.linalg.norm(recent_point * rf - point * rf)
             recent_point = point
 
     return total_distance
