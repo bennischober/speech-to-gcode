@@ -31,9 +31,10 @@ def get_speech_to_text_component():
                                             },
                                             children=[
                                                 html.I(id='toggle-icon',
-                                                       className='fas fa-microphone',
+                                                       className='fas fa-microphone-slash',
                                                        style={"fontSize": "3rem"})
-                                            ]
+                                            ],
+                                            disabled=True,
                                         ),
                                         html.Div(id='toggle-output',
                                                  children='Aufnahme starten'),
@@ -44,14 +45,19 @@ def get_speech_to_text_component():
                                 dbc.Col(
                                     style={"border-left": "2px solid #ccc"},
                                     children=[
-                                        html.H3("Texteingabe"),
-                                        dbc.Textarea(
-                                            id="text-input",
-                                            placeholder="Geben Sie einen Text ein...",
-                                        ),
-                                        html.Div(id="output"),
+                                        dbc.Container(children=[
+                                            html.H3("Texteingabe"),
+                                            dbc.Textarea(
+                                                id="text-input",
+                                                placeholder="Geben Sie einen Text ein...",
+                                                value="Ein Haus mit einem Pool",
+                                                style={"width": "75%", "margin-left": "auto", "margin-right": "auto"}
+                                            ),
+                                            html.Div(id="output"),
+                                        ],
+                                            fluid="sm")
                                     ],
-                                    className="mt-5",
+                                    className="text-center mt-5",
                                 ),
                             ],
                             className="mb-5",
@@ -64,7 +70,8 @@ def get_speech_to_text_component():
                             html.Span(children=[
                                 html.H5(id="current-prompt")
                             ], style={'display': 'inline-block'}),
-                        ]),
+                        ],
+                        className="text-center"),
                         html.Hr(),
                         dbc.Row(
                             [
@@ -80,13 +87,19 @@ def get_speech_to_text_component():
                     ],
                 ),
             ]),
-            dcc.Store('diffusion_prompt'),
-            dcc.Store(id='input-prompts-store', storage_type='session'),
-            dcc.Store(id="positive-prompts-store", storage_type="session",
-                      data=POSITIVE_PROMPTS),
-            dcc.Store(id="negative-prompts-store", storage_type="session",
-                      data=NEGATIVE_PROMPTS),
-            dcc.Store("settings-prompts-store", storage_type="local",
+            dcc.Store('diffusion_prompt', data={'prompt': 'Ein Haus mit einem Pool',
+                                                'negative': ''}),
+            dcc.Store(id='input-prompts-store', storage_type='session',
+                      data="Ein Haus mit einem Pool"),
+            dcc.Store(id="positive-all-prompts-store",
+                      storage_type="session", data=POSITIVE_PROMPTS),
+            dcc.Store(id="negative-all-prompts-store",
+                      storage_type="session", data=NEGATIVE_PROMPTS),
+            dcc.Store(id="positive-selected-prompts-store",
+                      storage_type="session", data=POSITIVE_PROMPTS),
+            dcc.Store(id="negative-selected-prompts-store",
+                      storage_type="session", data=NEGATIVE_PROMPTS),
+            dcc.Store(id="settings-prompts-store", storage_type="local",
                       data={'save_settings': False}),
         ],
         className='mb-4'
@@ -97,7 +110,7 @@ def get_speech_to_text_component():
     Output("current-prompt", "children"),
     Input("text-input", "value"),
     State('toggle-icon', 'className'),
-    prevent_initial_call=True
+    # prevent_initial_call=True
 )
 def update_current_prompt(text_input, current_class):
     if 'fas fa-microphone' in current_class:
@@ -107,35 +120,32 @@ def update_current_prompt(text_input, current_class):
 
 
 @callback(
-    Output("positive-prompts-store", "data", allow_duplicate=True),
-    Output("negative-prompts-store", "data", allow_duplicate=True),
-    Output("text-input", "value"),
+    # Output("text-input", "value"),
     Output("diffusion_prompt", "data"),
     Input("generate-image", "n_clicks"),
     Input("reset-inputs", "n_clicks"),
-    State("settings-prompts-store", "data"),
     State("input-prompts-store", "data"),
-    State("positive-prompts-store", "data"),
-    State("negative-prompts-store", "data"),
+    State("positive-selected-prompts-store", "data"),
+    State("negative-selected-prompts-store", "data"),
     prevent_initial_call=True
 )
-def save_or_reset(images_click: int, reset_click: int, settings: dict, input: str, positive: list, negative: list):
+def save_or_reset(images_click: int, reset_click: int, input: str, positive: list, negative: list):
     triggered_id: str = ctx.triggered_id
 
     if triggered_id == "generate-image":
-        prompt: list[str] = positive.copy()
-        prompt.append(input)
-        # map prompt and negative to whitespace seperated string
+        prompt: list[str] = [input]
+        prompt.extend(positive)
+
+        # map prompt and negative to whitespace separated string
         prompt = " ".join(prompt)
         negative = " ".join(negative)
 
         diffusion_prompt = {'prompt': prompt, 'negative': negative}
-
-        if settings['save_settings']:
-            return dash.no_update, dash.no_update, '', diffusion_prompt
-        # generate image
-        return POSITIVE_PROMPTS, NEGATIVE_PROMPTS, '', diffusion_prompt
-    return POSITIVE_PROMPTS, NEGATIVE_PROMPTS, '', None, dash.no_update
+        return diffusion_prompt
+    # elif triggered_id == "reset-inputs":
+    #     return None
+    else:
+        return dash.no_update
 
 
 @callback(
@@ -151,15 +161,15 @@ def save_or_reset(images_click: int, reset_click: int, settings: dict, input: st
     prevent_initial_call=True
 )
 def toggle_icon(mic_click: int, text_input: str, current_class: str):
-    new_class = 'fas fa-microphone'
+    new_class = 'fas fa-microphone-slash'
     recording_status = 'Aufnahme starten'
     text_disabled = False
     text = text_input
 
     if ctx.triggered_id == 'toggle-button':
-        if 'fas fa-microphone-slash' not in current_class:
+        if 'fas fa-microphone-slash' in current_class:
             text_disabled = True
-            new_class = 'fas fa-microphone-slash'
+            new_class = 'fas fa-microphone'
             recording_status = 'Aufnahme stoppen'
             t = threading.Thread(
                 target=recorder.start_recording, name="start_recording")
