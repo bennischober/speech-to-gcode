@@ -35,6 +35,7 @@ def _create_callbacks(prefix: str, initial_items):
         Output(f"{prefix}-all-prompts-store", "data"),
         Output(f"{prefix}-selected-prompts-store", "data"),
         Output(f"{prefix}-prompts-input", "value"),
+        Output(f"select-all-{prefix}-prompts", "children"),
         Input(f"add-{prefix}-prompt", "n_clicks"),
         Input(f"{prefix}-all-prompts-store", "data"),
         Input(f"{prefix}-selected-prompts-store", "data"),
@@ -61,8 +62,20 @@ def _create_callbacks(prefix: str, initial_items):
         if checklist_value is not None:
             selected_prompts = checklist_value
 
+        button_text = "Alles selektieren"
+        if set(selected_prompts) == set(all_prompts):
+            button_text = "Alles deselektieren"
+            
+
         if triggered_id == f"select-all-{prefix}-prompts":
-            selected_prompts = all_prompts[:]
+            # If all prompts are selected, deselect them
+            if set(selected_prompts) == set(all_prompts):
+                selected_prompts = []
+                button_text = "Alles selektieren"
+            # If not all prompts are selected, select them
+            else:
+                selected_prompts = all_prompts[:]
+                button_text = "Alles deselektieren"
 
         if triggered_id == "reset-inputs":
             all_prompts = initial_items[:]
@@ -72,7 +85,7 @@ def _create_callbacks(prefix: str, initial_items):
         options = [{"label": prompt, "value": prompt}
                    for prompt in all_prompts]
 
-        return options, selected_prompts, all_prompts, selected_prompts, input_value
+        return options, selected_prompts, all_prompts, selected_prompts, input_value, button_text
 
     return update_prompts
 
