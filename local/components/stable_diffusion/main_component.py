@@ -69,7 +69,8 @@ def get_selected_preload_image():
     Output('stable_diff_img_3', 'src'),
     Output('stable_diff_img_4', 'src'),
     Input('diffusion_prompt', 'data'),
-    Input('generate_diff_imges', 'n_clicks')
+    Input('generate_diff_imges', 'n_clicks'),
+    prevent_initial_call=True
 )
 def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
     if n_clicks is None and diffusion_prompt is None:
@@ -80,8 +81,7 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
 
     data = {
         "prompt": diffusion_prompt['prompt'],
-        "negative_prompt": diffusion_prompt['negative'],
-        "num_images_per_prompt": 4
+        "negative_prompt": diffusion_prompt['negative']
     }
 
     # Send the API request
