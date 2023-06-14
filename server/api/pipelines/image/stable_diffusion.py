@@ -1,23 +1,19 @@
 from diffusers import StableDiffusionPipeline
 import torch
-from logging import Logger
+from lib.logger import get_logger
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+# Create a logger for the module
+logger = get_logger(__name__)
 
-model_id = "runwayml/stable-diffusion-v1-5"
-pipe = StableDiffusionPipeline.from_pretrained(model_id, revision="fp16",torch_dtype=torch.float16)
-pipe = pipe.to(device)
-
-def generate_image(prompt: str,
+def generate_image(pipe: StableDiffusionPipeline,
+                   prompt: str,
                    negative_prompt: str,
                    width: int = 512,
                    height: int = 512,
                    num_inference_steps: int = 15,
                    guidance_scale: int = 9,
-                   num_images_per_prompt: int = 5,
-                   logger: Logger = None):
-    if logger:
-        logger.info("Calling generate_image")
+                   num_images_per_prompt: int = 5):
+    logger.info("Calling generate_image!")
 
     try:
         result = pipe(
@@ -33,15 +29,11 @@ def generate_image(prompt: str,
         del result  # delete large variables as soon as possible
         torch.cuda.empty_cache()  # clear GPU memory
 
-        if logger:
-            logger.info(f"{len(images)} Image generated successfully!")
+        logger.info(f"{len(images)} Image generated successfully!")
 
         return images
     
     except Exception as e:
-        if logger:
-            logger.error("Error generating image: %s", e)
-        else:
-            print(f"Error generating image: {e}")
+        logger.error("Error generating image: %s", e)
 
         return None
