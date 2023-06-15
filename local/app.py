@@ -98,5 +98,3 @@ app.layout = html.Div(
 if __name__ == '__main__':
     # is needed for gcode image
     matplotlib.use('Agg')
-
-    app.run(debug=True) # Maximale Länge der URL auf 1 MB setzen
