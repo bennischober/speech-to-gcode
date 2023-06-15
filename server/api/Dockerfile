@@ -4,6 +4,7 @@ WORKDIR /usr/app/src
 
 # Set the transformers cache location
 ENV TRANSFORMERS_CACHE=/models
+ENV LOGS_DIR=/logs
 ENV API_PORT=5000
 
 RUN pip3 install --upgrade diffusers[torch] && \
@@ -25,3 +26,4 @@ CMD [ "python", "./serve.py"]
 
 # Declare models as a volume
 VOLUME /models
+VOLUME /logs

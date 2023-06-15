@@ -13,10 +13,11 @@ app = Flask(__name__)
 CORS(app)
 
 cache_dir = os.getenv('TRANSFORMERS_CACHE')
+logs_dir = os.getenv('LOGS_DIR')
 
 # setup logging
 app.logger.setLevel(logging.INFO)
-file_handler = logging.FileHandler(os.path.join(cache_dir, "api.log"))
+file_handler = logging.FileHandler(os.path.join(logs_dir, "api.log"))
 file_handler.setLevel(logging.INFO)
 app.logger.addHandler(file_handler)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
