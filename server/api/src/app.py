@@ -116,3 +116,16 @@ def transcribe_endpoint():
     image_pipeline.load()
 
     return text
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    app.logger.info("Health check")
+    return {"status": "UP"}, 200
+
+@app.route('/api/state', methods=['GET'])
+def get_state():
+    app.logger.info("Getting state")
+    return {"state": {
+        "image_pipeline": image_pipeline.is_loaded(),
+        "text_pipeline": text_pipeline.is_loaded()
+    }}, 200
