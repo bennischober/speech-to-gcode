@@ -1,5 +1,5 @@
-from dash import html, callback, no_update, dcc
-import dash_bootstrap_components as dbc
+from dash import callback, no_update
+
 from dash.dependencies import Input, Output, State
 import numpy as np
 import cv2
@@ -9,74 +9,10 @@ import matplotlib.pyplot as plt
 import io
 
 from components.image_to_gcode.converter import image_to_gcode
-from components.image_to_gcode.dynamic_layout import gcode_content_layout
+from components.image_to_gcode.layout import layout
 
 def get_image_to_gcode_component():
-    return dbc.Card(
-        children=[
-            dbc.CardHeader('Image to GCode'),
-
-            dbc.CardBody([
-                html.Div([
-                    html.Div(
-                        children=[
-                            html.H3('Status'),
-                            html.Div([
-                                html.H1("00:00:00", id='total_feeding_time', style={"font-size": "48px","margin-bottom": "10px","color": "#007bff"}),
-                                html.P("Gesamt-Fräszeit", style={"font-size": "18px", "color": "#6c757d"}),
-                            ], style={"margin": "30px 0 30px 0"}),
-                            html.Table(
-                                [
-                                    # html.Tr([html.Td(html.Strong("Fräßzeit:")), html.Td('00:00:00', id="fräzeit", style={"font-weight": "bold", "color": "purple", 'padding': '5px 5px 5px 15px'})]),
-                                    html.Tr([html.Td(html.Strong("Konturenanzahl:")), html.Td('0', id="amt_contours", style={"font-weight": "bold", "color": "#BF40BF", 'padding': '5px 5px 5px 15px'})]),
-                                    html.Tr([html.Td(html.Strong("GCODE-Zeilenanzahl:")), html.Td('0', id="amt_gcode_lines", style={"font-weight": "bold", "color": "#BF40BF", 'padding': '5px 5px 5px 15px'})]),
-                                    html.Tr([html.Td(html.Strong("G0-xy-Distanz:")), html.Td('0', id="g0_xy_distance", style={"font-weight": "bold", "color": "#BF40BF", 'padding': '5px 5px 5px 15px'})]),
-                                    html.Tr([html.Td(html.Strong("G0-z-Distanz:")), html.Td('0', id="g0_z_distance", style={"font-weight": "bold", "color": "#BF40BF", 'padding': '5px 5px 5px 15px'})]),
-                                    html.Tr([html.Td(html.Strong("G0 Fräszeit:")), html.Td('0', id="g0_feeding_time", style={"font-weight": "bold", "color": "#BF40BF", 'padding': '5px 5px 5px 15px'})]),
-                                    html.Tr([html.Td(html.Strong("G1-xy-Distanz:")), html.Td('0', id="g1_xy_distance", style={"font-weight": "bold", "color": "#BF40BF", 'padding': '5px 5px 5px 15px'})]),
-                                    html.Tr([html.Td(html.Strong("G1-z-Distanz:")), html.Td('0', id="g1_z_distance", style={"font-weight": "bold", "color": "#BF40BF", 'padding': '5px 5px 5px 15px'})]),
-                                    html.Tr([html.Td(html.Strong("G1 Fräszeit:")), html.Td('0', id="g1_feeding_time", style={"font-weight": "bold", "color": "#BF40BF", 'padding': '5px 5px 5px 15px'})]),
-                                ],
-                                id="output-table",
-                                className="table",
-                                style={"text-align": "left", "font-size": "120%"}
-                            ),
-                            html.H3('Parameter'),
-                            html.Div(
-                                children=[
-                                    html.Label('Epsilon'),
-                                    dcc.Slider(
-                                        id='edge_approx_epsilon_slider',
-                                        min=0.0,
-                                        max=4.0,
-                                        step=0.1,
-                                        value=0.0,
-                                        marks={i/10 if (i / 10) % 1 != 0 else int(i/10): str(i/10) for i in range(0, 41, 5)}
-                                    ),
-                                    html.Div(id='slider-output')
-                                ]
-                            )
-                        ],
-                        style={'flex': '30%', 'padding': '20px'},
-                    ),
-                    html.Div(
-                        style={'flex': '70%', 'padding': '20px'},
-                        children=[
-                            html.H3('GCODE Bild'),
-                            dcc.Loading(
-                                id='loading-icon',
-                                type='default',
-                                children=[
-                                    html.Img(id='gcode_image', className='img-thumbnail')
-                                ]
-                            )
-                        ]
-                    )
-                ], style={'display': 'flex'}),
-                html.Div(gcode_content_layout, id='gcode_content_layout')
-            ]),
-        ],
-        className='mb-4 card_image_to_gcode')
+    return layout
 
 ### Show GCODE if button is clicked ###
 @callback(
@@ -89,20 +25,87 @@ def toggle_collapse1(n_clicks, is_open):
         return not is_open
     return is_open
 
+# Show GCODE Statistics
+@callback(
+    Output("gcode_statistic_collapse", "is_open", allow_duplicate=True),
+    Output("gcode_params_collapse", "is_open", allow_duplicate=True),
+    [Input("show_gcode_statistics_button", "n_clicks")],
+    [State("gcode_statistic_collapse", "is_open")],
+    [State("gcode_params_collapse", "is_open")],
+    prevent_initial_call=True
+)
+def toggle_collapse(n_clicks, stats_is_open, params_is_open):
+    if n_clicks:
+        return not stats_is_open, False if not stats_is_open else params_is_open
+    
+    return stats_is_open, params_is_open
+
+# Show GCODE Params
+@callback(
+    Output("gcode_params_collapse", "is_open", allow_duplicate=True),
+    Output("gcode_statistic_collapse", "is_open", allow_duplicate=True),
+    [Input("show_gcode_params_button", "n_clicks")],
+    [State("gcode_params_collapse", "is_open")],
+    [State("gcode_statistic_collapse", "is_open")],
+    prevent_initial_call=True
+)
+def toggle_collapse(n_clicks, params_is_open, stats_is_open):
+    if n_clicks:
+        return not params_is_open, False if not params_is_open else stats_is_open
+    
+    return params_is_open, stats_is_open
+
+@callback(
+    Output('dynamic_params', 'data'),
+    Input('edge_approx_epsilon_slider', 'value'),
+    Input('gcode_size', 'value'),
+    Input('min_contour_len', 'value'),
+    Input('blurr_kernel_size', 'value'),
+    Input('z_safe_hight', 'value'),
+    Input('z_working_hight', 'value'),
+    Input('z_zero_height', 'value'),
+    Input('z_feed_height', 'value'),
+    Input('z_feed', 'value'),
+    Input('xy_feed', 'value'),
+    Input('spindle_speed', 'value'),
+    Input('g0_feed', 'value'),
+    prevent_initial_call=True
+)
+def changeDynamicParams(epsilon, gcode_size, min_contour_len, blurr_kernel_size, z_safe_hight, 
+                        z_working_hight, z_zero_height, z_feed_height, z_feed, xy_feed, spindle_speed, 
+                        g0_feed):
+    return {
+        'epsilon': epsilon,
+        'gcode_size': gcode_size,
+        'min_contour_len': min_contour_len,
+        'blurr_kernel_size': blurr_kernel_size,
+        'z_safe_hight': z_safe_hight,
+        'z_working_hight': z_working_hight,
+        'z_zero_height': z_zero_height,
+        'z_feed_height': z_feed_height,
+        'z_feed': z_feed,
+        'xy_feed': xy_feed,
+        'spindle_speed': spindle_speed,
+        'g0_feed': g0_feed,
+    }
+
+
+
 @callback(
     Output('gcode_store', 'data'),
     Output('ordered_contours_store', 'data'),
     Output('gcode_stats_store', 'data'),
     Input('base64_edge_image_store', 'data'),
-    Input('edge_approx_epsilon_slider', 'value'),
+    State('dynamic_params', 'data'),
     prevent_initial_call=True
 )
-def update_code_list(edge_base64, epsilon):
+def update_code_list(edge_base64, params):
     edge_decoded_image = base64.b64decode(edge_base64.split(',')[1])
     edge_image_array = np.frombuffer(edge_decoded_image, dtype=np.uint8)
     edge_image = cv2.imdecode(edge_image_array, cv2.IMREAD_GRAYSCALE)
 
-    params = {'epsilon': epsilon}
+    # 'resize_factor': gcode_size / image_size,
+    # 'start_point': np.array([0, 0])
 
     gcode_data = None; ordered_contours = None; gcode_stats = None
     if edge_image is not None:
@@ -112,13 +115,9 @@ def update_code_list(edge_base64, epsilon):
 
 @callback(
     Output('gcode_visualization', 'children'),
-    State('gcode_store', 'data'),
-    Input('gcode_content_layout', 'children')
+    Input('gcode_store', 'data')
 )
-def load_gcode(gcode_data, gcode_content_layout):
-    if gcode_content_layout == []:
-        return no_update
-    
+def load_gcode(gcode_data):
     return gcode_data
 
 @callback(
@@ -167,8 +166,6 @@ def display_gcode_image(ordered_contours):
     fig = plt.figure(figsize=( 512 / 50, 512 / 50))
     fig.patch.set_facecolor('black')
 
-    doubled_lines = []
-
     for contour in ordered_contours:
         contour = np.array(contour)
         x_approx = contour[:, :, 0].flatten()
@@ -176,7 +173,6 @@ def display_gcode_image(ordered_contours):
 
         plt.plot(x_approx, y_approx, color='blue')
 
-    plt.gca().invert_yaxis()
     plt.axis('off')
 
     # Erstelle einen Bytes-Puffer

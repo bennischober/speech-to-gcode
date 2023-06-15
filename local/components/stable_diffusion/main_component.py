@@ -7,6 +7,8 @@ import io
 import os
 from utils.config import SD_ENDPOINT
 
+import json
+
 preloaded_images = None
 with open(os.path.join(os.path.dirname(__file__), "preloaded_images.txt"), "r") as file:
     preloaded_images = eval(file.read())
@@ -79,7 +81,8 @@ def get_selected_preload_image():
     Output('notification-toast', 'icon'),
     Output('notification-toast', 'is_open'),
     Input('diffusion_prompt', 'data'),
-    Input('generate_diff_imges', 'n_clicks')
+    Input('generate_diff_imges', 'n_clicks'),
+    prevent_initial_call=True
 )
 def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
     if n_clicks is None and diffusion_prompt is None:
@@ -90,8 +93,7 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
 
     data = {
         "prompt": diffusion_prompt['prompt'],
-        "negative_prompt": diffusion_prompt['negative'],
-        "num_images_per_prompt": 4
+        "negative_prompt": diffusion_prompt['negative']
     }
 
     # Send the API request
@@ -109,6 +111,10 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
                 image_bytes = image_file.read()
                 image_base64 = base64.b64encode(image_bytes).decode('utf-8')
                 image_stores.append(image_base64)
+
+    # Create new preloaded images
+    # with open("components/stable_diffusion/preloaded_images2.txt", "w") as file:
+    #     file.write(json.dumps(image_stores))
 
     return f"data:image/png;base64,{image_stores[0]}", \
            f"data:image/png;base64,{image_stores[1]}", \

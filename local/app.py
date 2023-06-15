@@ -8,6 +8,7 @@ from components.image_to_gcode.main_component import get_image_to_gcode_componen
 from components.controlling.main_component import FuturisticButtons
 from components.shared.Notification.main_component import notifications
 import matplotlib
+from utils.config import DEFAUL_GCODE_STATS, DYNAMIC_PARAMS
 
 # Load Icons
 html.I(className='fas fa-microphone')
@@ -71,18 +72,8 @@ app.layout = html.Div(
                 dcc.Store(id='base64_edge_image_store'),
                 dcc.Store(id='gcode_store'),
                 dcc.Store(id='ordered_contours_store'),
-                dcc.Store(id='gcode_stats_store', data={
-                    'total_feeding_time': '0.00:0.00:0.00',
-                    'amount_contours': 0,
-                    'amount_gcode_rows': 0,
-                    'total_distance': 0,
-                    'g0_xy_distance': 0,
-                    'g0_z_distance': 0,
-                    'g0_feeding_time': 0,
-                    'g1_xy_distance': 0,
-                    'g1_z_distance': 0,
-                    'g1_feeding_time': 0
-                }),
+                dcc.Store(id='gcode_stats_store', data=DEFAUL_GCODE_STATS),
+                dcc.Store(id='dynamic_params', data=DYNAMIC_PARAMS),
                 dcc.Store(id='recent_gcode_generated_successfully_store', data=None),
 
                 # The Components

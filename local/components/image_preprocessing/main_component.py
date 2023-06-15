@@ -1,9 +1,8 @@
 import dash_bootstrap_components as dbc
-from dash import html, Input, Output, callback, dcc
+from dash import html, Input, Output, callback, dcc, State
 import cv2
 import base64
 import numpy as np
-from components.image_to_gcode.params import blurr_kernel_size
 
 dilated_img = None
 orginal_img = None 
@@ -30,8 +29,7 @@ def get_image_preprocessing_component():
                         html.Img(id='edges-image', className='img-thumbnail center_image')
                     ]),
                 ], className='m-4 row_with_images'),
-            ],
-            className='mb-4'
+            ]
         )
 
 @callback(
@@ -40,8 +38,10 @@ def get_image_preprocessing_component():
           Output('blurred-image', 'src'),
           Output('edges-image', 'src'),
           Output('base64_edge_image_store', 'data'),
-          Input('base64_selected_stable_diff_img_store', 'data'))
-def process_image(selected_diff_image):
+          State('dynamic_params', 'data'),
+          Input('base64_selected_stable_diff_img_store', 'data'),
+          Input('reload_gcode', 'n_clicks'))
+def process_image(params, selected_diff_image, _):
     if selected_diff_image is not None:
         # Convert image
         decoded_image = base64.b64decode(selected_diff_image.split(',')[1])
@@ -59,7 +59,7 @@ def process_image(selected_diff_image):
         gray_base64 = base64.b64encode(gray_encoded).decode('utf-8')
 
         # Rauschen eliminieren
-        blurred =  cv2.GaussianBlur(gray, (blurr_kernel_size, blurr_kernel_size), 0)
+        blurred =  cv2.GaussianBlur(gray, (params['blurr_kernel_size'], params['blurr_kernel_size']), 0)
         _, blurred_encoded = cv2.imencode('.png', blurred)
         blurred_base64 = base64.b64encode(blurred_encoded).decode('utf-8')
 
