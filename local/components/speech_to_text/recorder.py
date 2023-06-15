@@ -56,13 +56,19 @@ class Recorder:
 
         self.log.info("All threads stopped")
 
+
+        # audio convertion
         raw_audio = np.frombuffer(b"".join(list(self.input_queue.queue)), dtype=np.int16)
+
         converted_audio = raw_audio.astype(np.float32)
-        audio = librosa.resample(converted_audio, orig_sr=self.rate, target_sr=16000)
+        normalized_audio = converted_audio / 32768.0   # normalize data to range [-1, 1]
+
+        audio = librosa.resample(normalized_audio, orig_sr=self.rate, target_sr=16000)
 
         file_path = os.path.join(os.path.dirname(__file__), "audio.wav")
 
         sf.write(file_path, audio, 16000, subtype='PCM_16')
+
 
         # clear the queue
         self.input_queue.queue.clear()
