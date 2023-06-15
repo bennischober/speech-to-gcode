@@ -1,13 +1,16 @@
-from flask import Flask, request, make_response
-import logging
-import torch
-import io
 import os
+import io
+import logging
 import zipfile
+from flask import Flask, request, make_response
+from flask_cors import CORS
+import torch
 from pipelines.image.ImagePipeline import ImagePipeline
 from pipelines.text.TextPipeline import TextPipeline
 
+
 app = Flask(__name__)
+CORS(app)
 
 cache_dir = os.getenv('TRANSFORMERS_CACHE')
 
@@ -16,6 +19,8 @@ app.logger.setLevel(logging.INFO)
 file_handler = logging.FileHandler(os.path.join(cache_dir, "api.log"))
 file_handler.setLevel(logging.INFO)
 app.logger.addHandler(file_handler)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
 
 # setup pipelines
 image_pipeline = ImagePipeline(cache_dir)
@@ -110,10 +115,3 @@ def transcribe_endpoint():
     image_pipeline.load()
 
     return text
-
-if __name__ == '__main__':
-    app.run(port=5000, host='0.0.0.0')
-
-# Docker Commands:
-# docker image build -t stbescho_apis:0.6 /home/stbescho/text_to_gcode/
-# docker run -d --gpus '"device=1"' -p 5000:5000 -v /home/stbescho/models:/models --name stbescho_apis stbescho_apis:0.6
