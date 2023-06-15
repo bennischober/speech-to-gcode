@@ -14,6 +14,7 @@ def get_speech_to_text_component():
             dbc.CardHeader('Speech-To-Text'),
             dbc.CardBody([
                 settings,
+                html.Div(id='recording-status', style={'display': 'none'}),
                 dbc.Container(
                     [
                         dbc.Row(
@@ -147,37 +148,56 @@ def save_or_reset(images_click: int, reset_click: int, input: str, positive: lis
     else:
         return dash.no_update
 
-
 @callback(
-    Output("input-prompts-store", "data", allow_duplicate=True),
+    Output("input-prompts-store", "data"),
     Output('toggle-icon', 'className'),
     Output('toggle-output', 'children'),
     Output("toggle-button", "disabled"),
     Output("text-input", "disabled"),
-    Output("current-prompt", "children", allow_duplicate=True),
+    Output("recording-status", "children"),
     Input('toggle-button', 'n_clicks'),
     Input("text-input", "value"),
-    State('toggle-icon', 'className'),
-    prevent_initial_call=True
+    State('toggle-icon', 'className')
 )
 def toggle_icon(mic_click: int, text_input: str, current_class: str):
     new_class = 'fas fa-microphone-slash'
     recording_status = 'Aufnahme starten'
+    mic_disabled = bool(text_input)
+    is_recording = None
     text_disabled = False
-    text = text_input
 
     if ctx.triggered_id == 'toggle-button':
         if 'fas fa-microphone-slash' in current_class:
-            text_disabled = True
             new_class = 'fas fa-microphone'
             recording_status = 'Aufnahme stoppen'
-            t = threading.Thread(
-                target=recorder.start_recording, name="start_recording")
-            t.start()
+            is_recording = 'true'
         else:
-            text_disabled = False
-            text = recorder.stop_recording()
+            mic_disabled = True
+            is_recording = 'false'
+            text_disabled = True
 
-        return text or dash.no_update, new_class, recording_status, bool(text_input), text_disabled, text or dash.no_update
+    return text_input or dash.no_update, new_class, recording_status, mic_disabled, text_disabled, is_recording or dash.no_update
 
-    return text or dash.no_update, current_class, 'Aufnahme starten', bool(text_input), text_disabled, text or dash.no_update
+@callback(
+    Output("input-prompts-store", "data", allow_duplicate=True),
+    Output("current-prompt", "children", allow_duplicate=True),
+    Output("toggle-button", "disabled", allow_duplicate=True),
+    Output("text-input", "disabled", allow_duplicate=True),
+    Input("recording-status", "children"),
+    State("text-input", "value"),
+    prevent_initial_call=True
+)
+def toggle_recording(is_recording: str, text_input: str):
+    text = text_input
+    text_disabled = True
+
+    if is_recording == 'true':
+        t = threading.Thread(
+            target=recorder.start_recording, name="start_recording")
+        t.start()
+    elif is_recording == 'false':
+        text = recorder.stop_recording()
+        text_disabled = False
+
+    return text or dash.no_update, text or dash.no_update, False, text_disabled
+
