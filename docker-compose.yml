@@ -22,3 +22,13 @@ services:
           - driver: nvidia
             device_ids: ['1'] # binds to GPU 1
             capabilities: [gpu]
+
+  dash_app:
+    build:
+      context: /home/stbescho/text_to_gcode/app/
+      dockerfile: Dockerfile
+    image: dash_app:0.1
+    environment:
+      - ENV=prod
+    ports:
+      - "8050:8050"
