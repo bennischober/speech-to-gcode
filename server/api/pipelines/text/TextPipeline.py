@@ -39,9 +39,8 @@ class TextPipeline:
 
         # Load Speech to Text model
         # reference: https://huggingface.co/openai/whisper-large#english-to-english
-        stt_model_id = "openai/whisper-medium"
-        self.whisper_processor = WhisperProcessor.from_pretrained(stt_model_id, cache_dir=self.cache_dir)
-        self.whisper_model = WhisperForConditionalGeneration.from_pretrained(stt_model_id, cache_dir=self.cache_dir).to("cuda")
+        self.whisper_processor = WhisperProcessor.from_pretrained(self.model_id, cache_dir=self.cache_dir)
+        self.whisper_model = WhisperForConditionalGeneration.from_pretrained(self.model_id, cache_dir=self.cache_dir).to("cuda")
 
         end_time = time.time()
         self.logger.info(f"Time taken to load Speech to Text model: {end_time - start_time} seconds")
