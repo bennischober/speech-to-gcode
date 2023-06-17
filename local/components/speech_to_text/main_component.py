@@ -15,6 +15,7 @@ def get_speech_to_text_component():
             dbc.CardBody([
                 settings,
                 html.Div(id='recording-status', style={'display': 'none'}),
+                html.Div(id='response-status', style={'display': 'none'}),
                 dbc.Container(
                     [
                         dbc.Row(
@@ -148,6 +149,7 @@ def save_or_reset(images_click: int, reset_click: int, input: str, positive: lis
     else:
         return dash.no_update
 
+
 @callback(
     Output("input-prompts-store", "data"),
     Output('toggle-icon', 'className'),
@@ -155,6 +157,10 @@ def save_or_reset(images_click: int, reset_click: int, input: str, positive: lis
     Output("toggle-button", "disabled"),
     Output("text-input", "disabled"),
     Output("recording-status", "children"),
+    Output('notification-toast', 'header'),
+    Output('notification-toast', 'children'),
+    Output('notification-toast', 'icon'),
+    Output('notification-toast', 'is_open'),
     Input('toggle-button', 'n_clicks'),
     Input("text-input", "value"),
     State('toggle-icon', 'className')
@@ -165,6 +171,10 @@ def toggle_icon(mic_click: int, text_input: str, current_class: str):
     mic_disabled = bool(text_input)
     is_recording = None
     text_disabled = False
+    notification_header = ""
+    notification_body = []
+    notification_icon = ""
+    notification_open = False
 
     if ctx.triggered_id == 'toggle-button':
         if 'fas fa-microphone-slash' in current_class:
@@ -176,13 +186,21 @@ def toggle_icon(mic_click: int, text_input: str, current_class: str):
             is_recording = 'false'
             text_disabled = True
 
-    return text_input or dash.no_update, new_class, recording_status, mic_disabled, text_disabled, is_recording or dash.no_update
+            notification_header = "Recording Stopped"
+            notification_body = [html.P("Please wait while we process your recording...", className="mb-0")]
+            notification_icon = "info"
+            notification_open = True
+
+    return text_input or dash.no_update, new_class, recording_status, mic_disabled, text_disabled, is_recording or dash.no_update, notification_header, notification_body, notification_icon, notification_open
+
 
 @callback(
     Output("input-prompts-store", "data", allow_duplicate=True),
     Output("current-prompt", "children", allow_duplicate=True),
     Output("toggle-button", "disabled", allow_duplicate=True),
     Output("text-input", "disabled", allow_duplicate=True),
+    Output('notification-toast', 'is_open', allow_duplicate=True),
+    Output('response-status', 'children', allow_duplicate=True),
     Input("recording-status", "children"),
     State("text-input", "value"),
     prevent_initial_call=True
@@ -190,14 +208,30 @@ def toggle_icon(mic_click: int, text_input: str, current_class: str):
 def toggle_recording(is_recording: str, text_input: str):
     text = text_input
     text_disabled = True
+    status = None
 
     if is_recording == 'true':
         t = threading.Thread(
             target=recorder.start_recording, name="start_recording")
         t.start()
     elif is_recording == 'false':
-        text = recorder.stop_recording()
+        response = recorder.stop_recording()
+        text = response.text
         text_disabled = False
+        status = "ok"
 
-    return text or dash.no_update, text or dash.no_update, False, text_disabled
+    return text or dash.no_update, text or dash.no_update, False, text_disabled, False, status
 
+@callback(
+    Output('notification-toast', 'header', allow_duplicate=True),
+    Output('notification-toast', 'children', allow_duplicate=True),
+    Output('notification-toast', 'icon', allow_duplicate=True),
+    Output('notification-toast', 'is_open', allow_duplicate=True),
+    Output('notification-toast', 'duration', allow_duplicate=True),
+    Input("response-status", "children"),
+    prevent_initial_call=True
+)
+def update_response_notification(status: str):
+    if status == "ok":
+        return "Response ok",  [html.P("Something", className="mb-0")], "success", True, 5000
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
