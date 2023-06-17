@@ -104,9 +104,9 @@ def transcribe_endpoint():
     
     text_pipeline.load()
 
-    text = text_pipeline.transcribe(file)
+    prompt, search_prompt = text_pipeline.transcribe(file)
 
-    if text is None:
+    if prompt is None or search_prompt is None:
         return "Error generating text", 500
 
     # move to cpu
@@ -115,7 +115,7 @@ def transcribe_endpoint():
     # load image pipeline
     image_pipeline.load()
 
-    return text
+    return jsonify({"prompt": prompt, "search_prompt": search_prompt})
 
 @app.route("/api/translate", methods=['POST'])
 def translate_endpoint():

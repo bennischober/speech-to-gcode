@@ -4,11 +4,16 @@ WORKDIR /usr/app/src
 
 # Set the transformers cache location
 ENV TRANSFORMERS_CACHE=/models
+# Set the NLTK_DATA location
+ENV NLTK_DATA=/models/nltk_data
 ENV LOGS_DIR=/logs
 ENV API_PORT=5000
+# Set the CUDA_HOME for GroundingDINO
+ENV CUDA_HOME=/usr/local/cuda
 
 RUN pip3 install --upgrade diffusers[torch] && \
     pip3 install transformers && \
+    pip3 install nltk && \
     pip3 install Flask && \
     pip3 install Pillow && \
     pip3 install open_clip_torch && \
