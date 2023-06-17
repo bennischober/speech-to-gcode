@@ -2,7 +2,7 @@ import os
 import io
 import logging
 import zipfile
-from flask import Flask, request, make_response
+from flask import Flask, request, make_response, jsonify
 from flask_cors import CORS
 import torch
 from pipelines.image.ImagePipeline import ImagePipeline
@@ -132,9 +132,9 @@ def translate_endpoint():
     
     text_pipeline.load()
 
-    translated_text = text_pipeline.translate(text)
+    prompt, search_prompt = text_pipeline.translate(text)
 
-    if translated_text is None:
+    if prompt is None or search_prompt is None:
         return "Error translating text", 500
 
     # move to cpu
@@ -143,7 +143,7 @@ def translate_endpoint():
     # load image pipeline
     image_pipeline.load()
 
-    return translated_text
+    return jsonify({"prompt": prompt, "search_prompt": search_prompt})
 
 @app.route('/api/health', methods=['GET'])
 def health_check():

@@ -1,8 +1,10 @@
+import os
 import gc
 import time
 import torch
 from transformers import WhisperProcessor, WhisperForConditionalGeneration
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import nltk
 import soundfile as sf
 import librosa
 from lib.logger import get_logger
@@ -40,6 +42,11 @@ class TextPipeline:
         self.do_sample = do_sample
         self.top_k = top_k
         self.top_p = top_p
+
+        # download nltk model
+        nltk.download('universal_tagset', download_dir=os.path.join(cache_dir, "nltk_data"))
+        nltk.download('punkt', download_dir=os.path.join(cache_dir, "nltk_data"))
+        nltk.download('averaged_perceptron_tagger', download_dir=os.path.join(cache_dir, "nltk_data"))
 
         # set the loading state of the models
         self.loading_state = "unloaded"
@@ -152,12 +159,31 @@ class TextPipeline:
 
             self.logger.info(f"Time taken to translate text: {end_time - start_time} seconds")
 
-            return translated_text
+            # get keywords
+            keywords = self.extract_nouns(translated_text)
+
+            return translated_text, keywords
         
         except Exception as e:
             self.logger.error("Error translating text: %s", e)
 
             return None
+        
+    def extract_nouns(self, text: str):
+        nouns = []
+        words = nltk.word_tokenize(text)
+        tagged_words = nltk.pos_tag(words, tagset='universal')
+
+        for word, tag in tagged_words:
+            if tag == 'NOUN' and word.lower() not in {'a', 'an', 'the'}:
+                nouns.append(word)
+
+        text_prompt = ""
+
+        for noun in nouns: 
+            text_prompt += noun + " . "
+
+        return text_prompt
     
     def unload_models(self, strategy: str = 'cpu'):
         if strategy == 'complete':
