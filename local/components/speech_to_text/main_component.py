@@ -92,6 +92,7 @@ def get_speech_to_text_component():
                                                 'negative': ''}),
             dcc.Store(id='input-prompts-store', storage_type='session',
                       data="Ein Haus mit einem Pool"),
+            dcc.Store(id="search-prompt-store", storage_type="session"),
             dcc.Store(id="positive-all-prompts-store",
                       storage_type="session", data=POSITIVE_PROMPTS),
             dcc.Store(id="negative-all-prompts-store",
@@ -128,9 +129,10 @@ def update_current_prompt(text_input, current_class):
     State("input-prompts-store", "data"),
     State("positive-selected-prompts-store", "data"),
     State("negative-selected-prompts-store", "data"),
+    State("search-prompt-store", "data"),
     prevent_initial_call=True
 )
-def save_or_reset(images_click: int, reset_click: int, input: str, positive: list, negative: list):
+def save_or_reset(images_click: int, reset_click: int, input: str, positive: list, negative: list, search_prompt: str):
     triggered_id: str = ctx.triggered_id
 
     if triggered_id == "generate-image":
@@ -141,7 +143,7 @@ def save_or_reset(images_click: int, reset_click: int, input: str, positive: lis
         prompt = " ".join(prompt)
         negative = " ".join(negative)
 
-        diffusion_prompt = {'prompt': prompt, 'negative': negative}
+        diffusion_prompt = {'prompt': prompt, 'negative': negative, 'search_prompt': search_prompt}
         return diffusion_prompt
     # elif triggered_id == "reset-inputs":
     #     return None
@@ -180,6 +182,7 @@ def toggle_icon(mic_click: int, text_input: str, current_class: str):
 
 @callback(
     Output("input-prompts-store", "data", allow_duplicate=True),
+    Output("search-prompt-store", "data", allow_duplicate=True),
     Output("current-prompt", "children", allow_duplicate=True),
     Output("toggle-button", "disabled", allow_duplicate=True),
     Output("text-input", "disabled", allow_duplicate=True),
@@ -190,14 +193,14 @@ def toggle_icon(mic_click: int, text_input: str, current_class: str):
 def toggle_recording(is_recording: str, text_input: str):
     text = text_input
     text_disabled = True
+    search = None
 
     if is_recording == 'true':
         t = threading.Thread(
             target=recorder.start_recording, name="start_recording")
         t.start()
     elif is_recording == 'false':
-        text = recorder.stop_recording()
+        text, search = recorder.stop_recording()
         text_disabled = False
 
-    return text or dash.no_update, text or dash.no_update, False, text_disabled
-
+    return text or dash.no_update, search or dash.no_update, text or dash.no_update, False, text_disabled

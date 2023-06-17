@@ -81,7 +81,8 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
 
     data = {
         "prompt": diffusion_prompt['prompt'],
-        "negative_prompt": diffusion_prompt['negative']
+        "negative_prompt": diffusion_prompt['negative'],
+        "search_prompt": diffusion_prompt['search_prompt'],
     }
 
     # Send the API request
