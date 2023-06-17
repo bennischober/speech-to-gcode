@@ -117,6 +117,34 @@ def transcribe_endpoint():
 
     return text
 
+@app.route("/api/translate", methods=['POST'])
+def translate_endpoint():
+    app.logger.info("Calling translate_endpoint")
+
+    # get params
+    params = request.json
+
+    text = params.get('text', None)
+
+    # move image_pipeline to cpu
+    if image_pipeline.is_loaded() == "cuda":
+        image_pipeline.to_cpu()
+    
+    text_pipeline.load()
+
+    translated_text = text_pipeline.translate(text)
+
+    if translated_text is None:
+        return "Error translating text", 500
+
+    # move to cpu
+    text_pipeline.to_cpu()
+
+    # load image pipeline
+    image_pipeline.load()
+
+    return translated_text
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     app.logger.info("Health check")
