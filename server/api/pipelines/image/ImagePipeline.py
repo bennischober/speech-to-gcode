@@ -1,4 +1,5 @@
 import os
+import uuid
 import gc
 import time
 from urllib.request import urlretrieve
@@ -8,11 +9,21 @@ import open_clip
 from diffusers import StableDiffusionPipeline
 from pipelines.image.stable_diffusion import generate_image
 from pipelines.image.laion_prediction import predict_score
+from pipelines.image.ObjectDetectionPipeline import ObjectDetectionPipeline
 from lib.logger import get_logger
 
 
 class ImagePipeline:
-    def __init__(self, cache_dir: str, sd_model_name: str = "runwayml/stable-diffusion-v1-5", sd_model_revision: str = "fp16", sd_model_torch_dtype: torch.dtype = torch.float16, clip_model_name: str = "ViT-L-14", clip_pretrained_name: str = "openai", aesthetic_clip_model_name: str = "vit_l_14"):
+    def __init__(
+            self,
+            cache_dir: str,
+            sd_model_name: str = "runwayml/stable-diffusion-v1-5",
+            clip_model_name: str = "ViT-L-14",
+            clip_pretrained_name: str = "openai",
+            aesthetic_clip_model_name: str = "vit_l_14",
+            sd_model_revision: str = "fp16",
+            sd_model_torch_dtype: torch.dtype = torch.float16
+        ):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.cache_dir = cache_dir
         self.logger = get_logger(__name__)
@@ -38,18 +49,35 @@ class ImagePipeline:
         
         self.logger.info(f"Loading state: {self.loading_state}. Device: {self.device}")
 
+        # load Stable Diffusion model
         start_time = time.time()
+
         self.pipe = StableDiffusionPipeline.from_pretrained(self.sd_model_name, revision=self.sd_model_revision,torch_dtype=self.sd_model_torch_dtype, cache_dir=self.cache_dir)
         self.pipe = self.pipe.to(self.device)
+
         end_time = time.time()
         self.logger.info(f"Time taken to load Stable Diffusion model: {end_time - start_time} seconds")
 
+
+        # load LAION model
         start_time = time.time()
+
         self.predict_model = self._get_aesthetic_model(clip_model=self.aesthetic_clip_model_name)
         self.predict_model.eval()
         self.feature_model, _, self.feature_preprocess = open_clip.create_model_and_transforms(self.clip_model_name, pretrained=self.clip_pretrained_name, device=self.device, cache_dir=self.cache_dir)
+
         end_time = time.time()
         self.logger.info(f"Time taken to load Predictor models: {end_time - start_time} seconds")
+
+
+        # load Object Detection model
+        start_time = time.time()
+
+        self.object_detection = ObjectDetectionPipeline(self.cache_dir)
+        self.object_detection.load()
+
+        end_time = time.time()
+        self.logger.info(f"Time taken to load Object Detection model: {end_time - start_time} seconds")
 
         # set the loading state of the models
         self.loading_state = self.device
@@ -72,9 +100,18 @@ class ImagePipeline:
         m = m.to(self.device)
         return m
 
-    def generate_images(self, prompt: str, negative_prompt: str, amount: int = 2, width: int = 512, height: int = 512, num_inference_steps: int = 15, guidance_scale: int = 9, num_images_per_prompt: int = 5):
-        # since we only have 24GB of VRAM, and the other the text pipeline needs about 6GB in idle, while this one needs around 10, we need to clear the VRAM before generating the image. Also, we are only able to create a smaller batch of images, since we are running out of memory otherwise. Thats why generate_images is called twice to generate 10 images.
-
+    def generate_images(
+            self,
+            prompt: str,
+            negative_prompt: str,
+            search_prompt: str,
+            amount: int = 2,
+            width: int = 512,
+            height: int = 512,
+            num_inference_steps: int = 15,
+            guidance_scale: int = 9,
+            num_images_per_prompt: int = 5
+        ):
         # models could be unloaded, load them again
         if self.pipe is None or self.predict_model is None or self.feature_model is None:
             # load models
@@ -95,13 +132,73 @@ class ImagePipeline:
 
         self.logger.info(f"{len(all_images)} images generated successfully!")
 
-        # gets top 4 images
-        sorte_img = sorted(
-            all_images, key=lambda x: predict_score(image=x, feature_model=self.feature_model, predict_model=self.predict_model, feature_preprocess=self.feature_preprocess), reverse=True)
+        image_scores = self._get_image_score(all_images, search_prompt)
 
-        # get top 4 images
-        images = sorte_img[:4]
-        return images
+        # Sort the image scores in descending order by 'result'
+        sorted_image_scores = sorted(image_scores, key=lambda x: x['result'], reverse=True)
+
+        # Get top 4 images based on the 'result' score
+        top_images = [all_images[score['index']] for score in sorted_image_scores[:4]]
+        
+        return top_images
+
+    def _get_image_score(self, all_images, search_prompt: str):
+        """Creates a score for each image in the list of images.
+
+        Args:
+            all_images (List): All images generated by the Stable Diffusion model.
+            search_prompt (str): The prompt to search for. Looks like this ```"chair . person . dog . "```
+
+        Returns:
+            dict: A dictionary with the scores for each image. Looks like this:
+
+            ```
+            {
+                0: {
+                    'laion': 7.01102,
+                    'dino': 4.2,
+                    'result': 11.21102
+                }
+            }
+            ```
+        """
+        
+        result = []
+
+        image_dir = os.getenv('IMAGE_DIR')
+        # generate uuid
+        tmp_img_path = os.path.join(image_dir, str(uuid.uuid4()))
+        # create tmp_img_path
+        os.makedirs(tmp_img_path, exist_ok=True)
+
+        for i, image in enumerate(all_images):
+            # get the score from the laion model
+            laion_score = predict_score(image=image, feature_model=self.feature_model, predict_model=self.predict_model, feature_preprocess=self.feature_preprocess)
+
+            # get the score from the dino model
+            dino_score, _, _ = self.object_detection.predict(image=image, prompt=search_prompt, index=i, img_path=tmp_img_path)
+
+            self.logger.info(f"SCORING IMAGE {i}: PROMPTS: {search_prompt} LAION: {laion_score} - DINO: {dino_score}")
+
+            # calculate the result score
+            result_score = laion_score + dino_score
+
+            # add the score to the image
+
+            result.append({
+                'laion': laion_score,
+                'dino': dino_score,
+                'result': result_score,
+                'index': i
+            })
+
+        # write result as json file to tmp_img_path
+        json_file = os.path.join(tmp_img_path, str(uuid.uuid4()) + ".json")
+        with open(json_file, 'w') as f:
+            f.write(str(result))
+        
+        return result
+
 
     def unload_models(self, strategy: str = 'cpu'):
         if strategy == 'complete':

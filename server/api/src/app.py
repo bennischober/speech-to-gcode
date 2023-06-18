@@ -1,5 +1,6 @@
 import os
 import io
+import time
 import logging
 import zipfile
 from flask import Flask, request, make_response, jsonify
@@ -36,6 +37,8 @@ text_pipeline.load()
 
 @app.route('/api/images', methods=['POST'])
 def image_endpoint():
+    start_time = time.time()
+
     app.logger.info("Calling image_endpoint")
 
     # get params
@@ -43,6 +46,7 @@ def image_endpoint():
 
     prompt = params.get('prompt', None)
     negative_prompt = params.get('negative_prompt', None)
+    search_prompt = params.get('search_prompt', None)
     width = params.get('width', 512)
     height = params.get('height', 512)
     num_inference_steps = params.get('num_inference_steps', 15)
@@ -56,7 +60,7 @@ def image_endpoint():
     image_pipeline.load()
 
     # generate images using the image pipeline
-    images = image_pipeline.generate_images(prompt, negative_prompt, width=width, height=height, num_inference_steps=num_inference_steps, guidance_scale=guidance_scale)
+    images = image_pipeline.generate_images(prompt, negative_prompt, search_prompt=search_prompt, width=width, height=height, num_inference_steps=num_inference_steps, guidance_scale=guidance_scale)
 
     if images is None:
         app.logger.error(f"Error generating image.")
@@ -87,11 +91,16 @@ def image_endpoint():
     response.headers.set('Content-Disposition', 'attachment',
                          filename='generated_images.zip')
     
+    end_time = time.time()
+    app.logger.info(f"Image_Endpoint duration: {end_time - start_time} seconds")
+
     return response
 
 
 @app.route("/api/transcribe", methods=['POST'])
 def transcribe_endpoint():
+    start_time = time.time()
+
     app.logger.info("Calling transcribe_endpoint")
 
     file = request.files.get("audio")
@@ -114,6 +123,9 @@ def transcribe_endpoint():
 
     # load image pipeline
     image_pipeline.load()
+
+    end_time = time.time()
+    app.logger.info(f"Transcribe_Endpoint duration: {end_time - start_time} seconds")
 
     return jsonify({"prompt": prompt, "search_prompt": search_prompt})
 
