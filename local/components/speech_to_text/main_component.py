@@ -1,11 +1,12 @@
-import dash
+import requests
 import threading
+import dash
 import dash_bootstrap_components as dbc
 from dash import html, dcc, callback, Input, Output, State, ctx
 import dash_bootstrap_components as dbc
 from components.speech_to_text.recorder import recorder
 from components.speech_to_text.settings_component import settings, settings_button
-from utils.config import POSITIVE_PROMPTS, NEGATIVE_PROMPTS
+from utils.config import POSITIVE_PROMPTS, NEGATIVE_PROMPTS, TEXT_ENDPOINT
 
 
 def get_speech_to_text_component():
@@ -91,7 +92,7 @@ def get_speech_to_text_component():
             dcc.Store('diffusion_prompt', data={'prompt': 'Ein Haus mit einem Pool',
                                                 'negative': ''}),
             dcc.Store(id='input-prompts-store', storage_type='session',
-                      data="Ein Haus mit einem Pool"),
+                      data={'prompt': "Ein Haus mit einem Pool", 'type': 'text'}),
             dcc.Store(id="search-prompt-store", storage_type="session"),
             dcc.Store(id="positive-all-prompts-store",
                       storage_type="session", data=POSITIVE_PROMPTS),
@@ -132,23 +133,42 @@ def update_current_prompt(text_input, current_class):
     State("search-prompt-store", "data"),
     prevent_initial_call=True
 )
-def save_or_reset(images_click: int, reset_click: int, input: str, positive: list, negative: list, search_prompt: str):
+def save_or_reset(images_click: int, reset_click: int, input: dict, positive: list, negative: list, search_prompt: str):
     triggered_id: str = ctx.triggered_id
 
     if triggered_id == "generate-image":
-        prompt: list[str] = [input]
-        prompt.extend(positive)
+        if input['type'] == 'text':
+            # make request to text pipeline
+            response = requests.post(TEXT_ENDPOINT, json={'text': input['prompt']})
+            data = response.json()
 
-        # map prompt and negative to whitespace separated string
-        prompt = " ".join(prompt)
-        negative = " ".join(negative)
+            translated_p = data['prompt']
+            search_p = data['search_prompt']
+            
+            diffusion_prompt = create_diffusion_prompt(
+                translated_p, positive, negative, search_p)
+            
+            return diffusion_prompt
 
-        diffusion_prompt = {'prompt': prompt, 'negative': negative, 'search_prompt': search_prompt}
+        diffusion_prompt = create_diffusion_prompt(
+            input['prompt'], positive, negative, search_prompt)
+        
         return diffusion_prompt
+
     # elif triggered_id == "reset-inputs":
     #     return None
     else:
         return dash.no_update
+
+def create_diffusion_prompt(prompt: str, positive, negative, search_prompt: str):
+    prompt: list[str] = [prompt]
+    prompt.extend(positive)
+
+    # map prompt and negative to whitespace separated string
+    prompt = " ".join(prompt)
+    negative = " ".join(negative)
+
+    return {'prompt': prompt, 'negative': negative, 'search_prompt': search_prompt}
 
 @callback(
     Output("input-prompts-store", "data"),
@@ -168,6 +188,8 @@ def toggle_icon(mic_click: int, text_input: str, current_class: str):
     is_recording = None
     text_disabled = False
 
+    text_dict = {'prompt': text_input, 'type': 'text'} if text_input else None
+
     if ctx.triggered_id == 'toggle-button':
         if 'fas fa-microphone-slash' in current_class:
             new_class = 'fas fa-microphone'
@@ -178,7 +200,7 @@ def toggle_icon(mic_click: int, text_input: str, current_class: str):
             is_recording = 'false'
             text_disabled = True
 
-    return text_input or dash.no_update, new_class, recording_status, mic_disabled, text_disabled, is_recording or dash.no_update
+    return text_dict or dash.no_update, new_class, recording_status, mic_disabled, text_disabled, is_recording or dash.no_update
 
 @callback(
     Output("input-prompts-store", "data", allow_duplicate=True),
@@ -191,16 +213,19 @@ def toggle_icon(mic_click: int, text_input: str, current_class: str):
     prevent_initial_call=True
 )
 def toggle_recording(is_recording: str, text_input: str):
-    text = text_input
+    text = {'prompt': text_input, 'type': 'text'} if text_input else None
     text_disabled = True
     search = None
+    translated_text = None
 
     if is_recording == 'true':
         t = threading.Thread(
             target=recorder.start_recording, name="start_recording")
         t.start()
     elif is_recording == 'false':
-        text, search = recorder.stop_recording()
+        text_response, search = recorder.stop_recording()
+        text = {'prompt': text_response, 'type': 'audio'}
+        translated_text = text_response
         text_disabled = False
 
-    return text or dash.no_update, search or dash.no_update, text or dash.no_update, False, text_disabled
+    return text or dash.no_update, search or dash.no_update, translated_text or dash.no_update, False, text_disabled
