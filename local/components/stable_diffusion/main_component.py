@@ -90,6 +90,7 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
 
     # Extract images from ZIP file and store in base64 format
     image_stores = []
+    ratings = {}
     with zipfile.ZipFile(io.BytesIO(response.content)) as zip_file:
         for i in range(4):
             image_name = f'image_{i}.jpg'
@@ -97,6 +98,12 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
                 image_bytes = image_file.read()
                 image_base64 = base64.b64encode(image_bytes).decode('utf-8')
                 image_stores.append(image_base64)
+        
+        # extract ratings
+        with zip_file.open("ratings.json") as ratings_file:
+            ratings = json.loads(ratings_file.read().decode('utf-8'))
+
+    print(ratings)
 
     # Create new preloaded images
     # with open("components/stable_diffusion/preloaded_images2.txt", "w") as file:

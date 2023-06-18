@@ -1,4 +1,5 @@
 import os
+import json
 import uuid
 import gc
 import time
@@ -105,7 +106,6 @@ class ImagePipeline:
             prompt: str,
             negative_prompt: str,
             search_prompt: str,
-            amount: int = 2,
             width: int = 512,
             height: int = 512,
             num_inference_steps: int = 15,
@@ -124,8 +124,14 @@ class ImagePipeline:
             self.to_gpu()
 
 
-        all_images = generate_image(self.pipe, prompt, negative_prompt, width=width,
-                                    height=height, num_inference_steps=num_inference_steps, guidance_scale=guidance_scale, num_images_per_prompt=10)
+        all_images = generate_image(self.pipe,
+                                    prompt,
+                                    negative_prompt,
+                                    width=width,
+                                    height=height,
+                                    num_inference_steps=num_inference_steps,
+                                    guidance_scale=guidance_scale,
+                                    num_images_per_prompt=num_images_per_prompt)
 
         if all_images is None or len(all_images) == 0:
             return None
@@ -137,10 +143,14 @@ class ImagePipeline:
         # Sort the image scores in descending order by 'result'
         sorted_image_scores = sorted(image_scores, key=lambda x: x['result'], reverse=True)
 
-        # Get top 4 images based on the 'result' score
-        top_images = [all_images[score['index']] for score in sorted_image_scores[:4]]
+        # Get top 4 images based on the 'result' score, along with their corresponding scores
+        top_images_with_scores = [(all_images[score['index']], score) for score in sorted_image_scores[:4]]
+
+        # clear the cache
+        torch.cuda.empty_cache()
+        del all_images
         
-        return top_images
+        return top_images_with_scores
 
     def _get_image_score(self, all_images, search_prompt: str):
         """Creates a score for each image in the list of images.
@@ -183,8 +193,6 @@ class ImagePipeline:
             # calculate the result score
             result_score = laion_score + dino_score
 
-            # add the score to the image
-
             result.append({
                 'laion': laion_score,
                 'dino': dino_score,
@@ -192,11 +200,12 @@ class ImagePipeline:
                 'index': i
             })
 
+        self.logger.info(f"Results wrote to path: {tmp_img_path}")
+
         # write result as json file to tmp_img_path
-        json_file = os.path.join(tmp_img_path, str(uuid.uuid4()) + ".json")
-        with open(json_file, 'w') as f:
-            f.write(str(result))
-        
+        with open(os.path.join(tmp_img_path, "ratings.json"), "w") as file:
+            file.write(json.dumps(result))
+
         return result
 
 
@@ -205,6 +214,7 @@ class ImagePipeline:
             del self.pipe
             del self.predict_model
             del self.feature_model
+            del self.object_detection
 
             # set the loading state of the models
             self.loading_state = "unloaded"
@@ -222,6 +232,7 @@ class ImagePipeline:
         self.pipe = self.pipe.to("cpu")
         self.predict_model = self.predict_model.cpu()
         self.feature_model = self.feature_model.cpu()
+        # self.object_detection.cpu()
         end_time = time.time()
         self.logger.info(f"Image Models moved to CPU. Time taken: {end_time - start_time} seconds.")
 
@@ -233,6 +244,7 @@ class ImagePipeline:
         self.pipe = self.pipe.to(self.device)
         self.predict_model = self.predict_model.cuda()
         self.feature_model = self.feature_model.cuda()
+        # self.object_detection.cuda()
         end_time = time.time()
         self.logger.info(f"Image Models moved to GPU. Time taken: {end_time - start_time} seconds.")
 

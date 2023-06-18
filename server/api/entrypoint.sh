@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# NOTE: KEEP LINE ENDINGS AS LF!
+
 # Change to the GroundingDINO directory
 cd /usr/app/src/GroundingDINO
 

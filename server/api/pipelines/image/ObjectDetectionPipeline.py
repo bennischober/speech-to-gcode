@@ -74,6 +74,8 @@ class ObjectDetectionPipeline:
         """
 
         # split prompt into nouns
+        if prompt is None:
+            prompt = ""
         nouns = prompt.split(" . ")
 
         image_source, img = self.load_image(image)
@@ -115,13 +117,18 @@ class ObjectDetectionPipeline:
         return final_score, logits, phrases
     
     def to(self, device):
-        self.model.to(device)
+        """Moves the model to the given device.
+
+        Args:
+            device (str|device): The device to move the model to. Can be either "cpu", "cuda" or a torch.device.
+        """
+        self.model = self.model.to(device)
         self.device = device
 
     def cpu(self):
-        self.model.to("cpu")
+        self.model = self.model.to("cpu")
         self.device = "cpu"
 
     def cuda(self):
-        self.model.to("cuda")
+        self.model = self.model.to("cuda")
         self.device = "cuda"
