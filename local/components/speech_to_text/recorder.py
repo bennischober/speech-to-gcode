@@ -20,6 +20,7 @@ class Recorder:
         self.recording = False
         self.log = logger.get_logger(__name__)
         self.latest_recording = None
+        self.latest_search_prompt = None
 
     def callback(self, indata, frames, time, status):
         if status:
@@ -81,7 +82,7 @@ class Recorder:
             sf.write(file_path, audio, 16000, subtype='PCM_16')
         except Exception as e:
             self.log.error("Error while writing audio file: {}".format(e))
-            return ""
+            return "", ""
 
         # make request
         try:
@@ -91,14 +92,21 @@ class Recorder:
                 self.log.info("Response: {}".format(response.text))
         except Exception as e:
             self.log.error("Error while sending audio data: {}".format(e))
-            return ""
+            return "", ""
+        
+        # get json response
+        data = response.json()
 
         # set latest recording value
-        self.latest_recording = response.text
+        self.latest_recording = data['prompt']
+        self.latest_search_prompt = data['search_prompt']
 
-        return response.text
+        return data['prompt'], data['search_prompt']
 
     def get_latest_recording(self):
         return self.latest_recording
+    
+    def get_latest_search_prompt(self):
+        return self.latest_search_prompt
 
 recorder = Recorder()

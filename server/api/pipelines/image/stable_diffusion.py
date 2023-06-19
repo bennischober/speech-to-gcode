@@ -13,8 +13,21 @@ def generate_image(pipe: StableDiffusionPipeline,
                    num_inference_steps: int = 15,
                    guidance_scale: int = 9,
                    num_images_per_prompt: int = 5):
-    logger.info("Calling generate_image!")
+    """Generates an image using the StableDiffusionPipeline. Uses the given prompt and negative prompt.
 
+    Args:
+        pipe (StableDiffusionPipeline): The pipeline to use for generating the image.
+        prompt (str): The prompt to use for generating the image.
+        negative_prompt (str): The negative prompt to use for generating the image.
+        width (int, optional): The with of the generated image. Defaults to 512.
+        height (int, optional): The height of the generated image. Defaults to 512.
+        num_inference_steps (int, optional): The number of inference steps to use for generating the image. Defaults to 15.
+        guidance_scale (int, optional): The guidance scale to use for generating the image. Defaults to 9.
+        num_images_per_prompt (int, optional): The number of images to generate per prompt. Defaults to 5.
+
+    Returns:
+        (Any | List | ndarray | None): The generated image or None, if an error occurred.
+    """
     try:
         result = pipe(
             prompt,
@@ -28,8 +41,6 @@ def generate_image(pipe: StableDiffusionPipeline,
         images = result.images
         del result  # delete large variables as soon as possible
         torch.cuda.empty_cache()  # clear GPU memory
-
-        logger.info(f"{len(images)} Image generated successfully!")
 
         return images
     

@@ -17,6 +17,7 @@ with open(os.path.join(os.path.dirname(__file__), "preloaded_images.txt"), "r") 
 def get_stable_diffusion_component():
     return dbc.Card(
         children=[
+            dcc.Store(id='ratings-store', storage_type='session'),
             dbc.CardHeader('Stable Diffusion'),
             html.Div([
                 dbc.Row([
@@ -26,7 +27,19 @@ def get_stable_diffusion_component():
                             dbc.Button(
                                 html.Img(id='stable_diff_img_1', className='img-thumbnail center_image', src=preloaded_images[0]),
                                 id='button_diff_img_1', className='clickable_image_button')
-                        )
+                        ),
+                        dbc.Row(
+                            dbc.Col([
+                                html.Span("i", id="info-icon_1", className="info-icon"),
+                                dbc.Tooltip(
+                                    id="tooltip_1",
+                                    target="info-icon_1",
+                                    placement="bottom",
+                                ),
+                            ],
+                            className="center-container"
+                            )
+                        ),
                     ]),
                     dbc.Col([
                         html.H4('Bild 2', style={"textAlign": "center"}),
@@ -34,7 +47,19 @@ def get_stable_diffusion_component():
                             dbc.Button(
                                 html.Img(id='stable_diff_img_2', className='img-thumbnail center_image', src=preloaded_images[1]),
                                 id='button_diff_img_2', className='clickable_image_button')
-                        )
+                        ),
+                        dbc.Row(
+                            dbc.Col([
+                                html.Span("i", id="info-icon_2", className="info-icon"),
+                                dbc.Tooltip(
+                                    id="tooltip_2",
+                                    target="info-icon_2",
+                                    placement="bottom",
+                                ),
+                            ],
+                            className="center-container"
+                            )
+                        ),
                     ]),
                     dbc.Col([
                         html.H4('Bild 3', style={"textAlign": "center"}),
@@ -42,7 +67,19 @@ def get_stable_diffusion_component():
                             dbc.Button(
                                 html.Img(id='stable_diff_img_3', className='img-thumbnail center_image', src=preloaded_images[2]),
                                 id='button_diff_img_3', className='clickable_image_button')
-                        )
+                        ),
+                        dbc.Row(
+                            dbc.Col([
+                                html.Span("i", id="info-icon_3", className="info-icon"),
+                                dbc.Tooltip(
+                                    id="tooltip_3",
+                                    target="info-icon_3",
+                                    placement="bottom",
+                                ),
+                            ],
+                            className="center-container"
+                            )
+                        ),
                     ]),
                     dbc.Col([
                         html.H4('Bild 4', style={"textAlign": "center"}),
@@ -50,7 +87,19 @@ def get_stable_diffusion_component():
                             dbc.Button(
                                 html.Img(id='stable_diff_img_4', className='img-thumbnail center_image', src=preloaded_images[3]),
                                 id='button_diff_img_4', className='clickable_image_button')
-                        )
+                        ),
+                        dbc.Row(
+                            dbc.Col([
+                                html.Span("i", id="info-icon_4", className="info-icon"),
+                                dbc.Tooltip(
+                                    id="tooltip_4",
+                                    target="info-icon_4",
+                                    placement="bottom",
+                                ),
+                            ],
+                            className="center-container"
+                            )
+                        ),
                     ]),
                 ]),
                 dbc.Button("Bilder neu laden", id='generate_diff_imges', className="mt-3"),
@@ -68,6 +117,7 @@ def get_selected_preload_image():
     Output('stable_diff_img_2', 'src'),
     Output('stable_diff_img_3', 'src'),
     Output('stable_diff_img_4', 'src'),
+    Output('ratings-store', 'data'),
     Input('diffusion_prompt', 'data'),
     Input('generate_diff_imges', 'n_clicks'),
     prevent_initial_call=True
@@ -81,7 +131,8 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
 
     data = {
         "prompt": diffusion_prompt['prompt'],
-        "negative_prompt": diffusion_prompt['negative']
+        "negative_prompt": diffusion_prompt['negative'],
+        "search_prompt": diffusion_prompt['search_prompt'],
     }
 
     # Send the API request
@@ -89,6 +140,7 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
 
     # Extract images from ZIP file and store in base64 format
     image_stores = []
+    ratings = {}
     with zipfile.ZipFile(io.BytesIO(response.content)) as zip_file:
         for i in range(4):
             image_name = f'image_{i}.jpg'
@@ -96,6 +148,10 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
                 image_bytes = image_file.read()
                 image_base64 = base64.b64encode(image_bytes).decode('utf-8')
                 image_stores.append(image_base64)
+        
+        # extract ratings
+        with zip_file.open("ratings.json") as ratings_file:
+            ratings = json.loads(ratings_file.read().decode('utf-8'))
 
     # Create new preloaded images
     # with open("components/stable_diffusion/preloaded_images2.txt", "w") as file:
@@ -104,7 +160,38 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
     return f"data:image/png;base64,{image_stores[0]}", \
            f"data:image/png;base64,{image_stores[1]}", \
            f"data:image/png;base64,{image_stores[2]}", \
-           f"data:image/png;base64,{image_stores[3]}"
+           f"data:image/png;base64,{image_stores[3]}", \
+           ratings
+
+
+@callback(
+    [
+        Output("tooltip_1", "children"),
+        Output("tooltip_2", "children"),
+        Output("tooltip_3", "children"),
+        Output("tooltip_4", "children"),
+    ],
+    Input("ratings-store", "data"),
+)
+def update_tooltips(ratings):
+    if ratings is None:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    tooltips_contents = []
+    for image_name in ["image_0.jpg", "image_1.jpg", "image_2.jpg", "image_3.jpg"]:
+        image_ratings = ratings.get(image_name, {"laion": "N/A", "dino": "N/A", "result": "N/A"})
+
+        tooltip_content = html.Div(
+            [
+                html.Div(["dino_score: ", html.Span(round(image_ratings['dino'], 2))]),
+                html.Div(["laion_score: ", html.Span(round(image_ratings['laion'], 2))]),
+                html.Div(["final_score: ", html.Span(round(image_ratings['result'], 2))]),
+            ],
+        )
+
+        tooltips_contents.append(tooltip_content)
+
+    return tooltips_contents
 
 
 @callback(Output('base64_selected_stable_diff_img_store', 'data', allow_duplicate=True),

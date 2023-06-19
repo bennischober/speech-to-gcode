@@ -14,6 +14,8 @@ if __name__ == '__main__':
 
 # DOCKER COMPOSE COMMANDS:
 
+# before running docker compuse up, goto /api/ and execute: chmod +x entrypoint.sh
+
 # builds the image and runs the container in detached mode, remove --build if you don't want to rebuild the image
 # docker compose up --build -d
 
