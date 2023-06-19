@@ -35,6 +35,8 @@ class ImagePipeline:
         self.clip_pretrained_name = clip_pretrained_name
         self.sd_model_revision = sd_model_revision
         self.sd_model_torch_dtype = sd_model_torch_dtype
+
+        # state of the models
         self.loading_state = "unloaded"
         self.logger.info("Image Pipeline initialized.")
 
@@ -53,7 +55,7 @@ class ImagePipeline:
         # load Stable Diffusion model
         start_time = time.time()
 
-        self.pipe = StableDiffusionPipeline.from_pretrained(self.sd_model_name, revision=self.sd_model_revision,torch_dtype=self.sd_model_torch_dtype, cache_dir=self.cache_dir)
+        self.pipe = StableDiffusionPipeline.from_pretrained(self.sd_model_name, torch_dtype=self.sd_model_torch_dtype, cache_dir=self.cache_dir)
         self.pipe = self.pipe.to(self.device)
 
         end_time = time.time()
@@ -110,8 +112,40 @@ class ImagePipeline:
             height: int = 512,
             num_inference_steps: int = 15,
             guidance_scale: int = 9,
-            num_images_per_prompt: int = 5
+            num_images_per_prompt: int = 5,
+            amount_of_images: int = 4,
+            max_iterations: int = 3,
+            score_threshold: float = None,
+            laion_score_threshold: float = None,
         ):
+        """Generates images using the Stable Diffusion model and scores them using the LAION model and the GroundingDINO model.
+
+        The iterative image generation works as follows:
+        1. Generate images using the Stable Diffusion model.
+        2. Score the images using the LAION model and the GroundingDINO model.
+        3. Check, if the score of the top ``amount_of_images`` images is higher than the score threshold.
+        4. If not, generate new images using the Stable Diffusion model and repeat from step 2.
+        
+        When ``max_iterations`` is reached, or the score threshold is reached, the process stops and returns the top ``amount_of_images`` images.
+
+
+        Args:
+            prompt (str): The prompt to use for generating the image.
+            negative_prompt (str): The negative prompt to use for generating the image.
+            search_prompt (str): The prompt to search for. Looks like this ```"chair . person . dog . "```
+            width (int, optional): The with of the generated image. Defaults to 512.
+            height (int, optional): The height of the generated image. Defaults to 512.
+            num_inference_steps (int, optional): The number of inference steps to use for generating the image. Defaults to 15.
+            guidance_scale (int, optional): The guidance scale to use for generating the image. Defaults to 9.
+            num_images_per_prompt (int, optional): The number of images to generate per prompt. Defaults to 5.
+            amount_of_images (int, optional): The amount of images to return. Defaults to 4.
+            max_iterations (int, optional): The maximum number of iterations to use for generating the image. Defaults to 3.
+            score_threshold (float, optional): The score threshold to use for the image. Defaults to None.
+            laion_score_threshold (float, optional): The score threshold to use for the LAION model. Defaults to None.
+
+        Returns:
+            list[tuple]: The generated images with their scores.
+        """
         # models could be unloaded, load them again
         if self.pipe is None or self.predict_model is None or self.feature_model is None:
             # load models
@@ -123,8 +157,30 @@ class ImagePipeline:
             self.logger.info(f"Image Models are not at the right device. Moving models to {self.device}...")
             self.to_gpu()
 
+        # setup base directory
+        image_dir = os.getenv('IMAGE_DIR')
+        tmp_img_path = os.path.join(image_dir, str(uuid.uuid4()))
+        os.makedirs(tmp_img_path, exist_ok=True)
 
-        all_images = generate_image(self.pipe,
+        # setup thresholds
+        laion_score_threshold = laion_score_threshold or 6.5
+        score_threshold = score_threshold or ((len(search_prompt.split(' . ')) - 1) * 0.6) + laion_score_threshold
+
+        all_images = []
+        all_scores = []
+
+        # get the image index for each iteration
+        index_offset = [i * num_images_per_prompt for i in range(max_iterations)]
+
+        self.logger.info(f"Starting image generation with {max_iterations} iterations. Prefered score: {score_threshold}")
+
+        for i in range(max_iterations):
+            # create a new folder for this iteration
+            iteration_img_path = os.path.join(tmp_img_path, f"iteration-{i+1}")
+            os.makedirs(iteration_img_path, exist_ok=True)
+
+            # generate and score images
+            images = generate_image(self.pipe,
                                     prompt,
                                     negative_prompt,
                                     width=width,
@@ -133,31 +189,31 @@ class ImagePipeline:
                                     guidance_scale=guidance_scale,
                                     num_images_per_prompt=num_images_per_prompt)
 
-        if all_images is None or len(all_images) == 0:
-            return None
+            image_scores = self._get_image_score(images, search_prompt, iteration_img_path, index_offset[i])
 
-        self.logger.info(f"{len(all_images)} images generated successfully!")
+            all_images.extend(images)
+            all_scores.extend(image_scores)
 
-        image_scores = self._get_image_score(all_images, search_prompt)
+            self.logger.info(f"ITERATION {i}: HIGH SCORE IMAGES: {len([score for score in image_scores if score['result'] >= score_threshold])}. Results wrote to path: {iteration_img_path}")
 
-        # Sort the image scores in descending order by 'result'
-        sorted_image_scores = sorted(image_scores, key=lambda x: x['result'], reverse=True)
+            # break if we already have {amount_of_images} high score images
+            if len([score for score in all_scores if score['result'] >= score_threshold]) >= amount_of_images:
+                break
 
-        # Get top 4 images based on the 'result' score, along with their corresponding scores
-        top_images_with_scores = [(all_images[score['index']], score) for score in sorted_image_scores[:4]]
-
-        # clear the cache
-        torch.cuda.empty_cache()
-        del all_images
-        
+        # sort all_scores by score and select top four images with scores
+        all_scores = sorted(all_scores, key=lambda x: x['result'], reverse=True)
+        top_images_with_scores = [(all_images[score['index']], score) for score in all_scores[:amount_of_images]]
+            
         return top_images_with_scores
+    
 
-    def _get_image_score(self, all_images, search_prompt: str):
+    def _get_image_score(self, all_images, search_prompt: str, image_path: str, index_offset: int):
         """Creates a score for each image in the list of images.
 
         Args:
             all_images (List): All images generated by the Stable Diffusion model.
             search_prompt (str): The prompt to search for. Looks like this ```"chair . person . dog . "```
+            image_path (str): The path to the folder, where the images are stored.
 
         Returns:
             dict: A dictionary with the scores for each image. Looks like this:
@@ -175,39 +231,35 @@ class ImagePipeline:
         
         result = []
 
-        image_dir = os.getenv('IMAGE_DIR')
-        # generate uuid
-        tmp_img_path = os.path.join(image_dir, str(uuid.uuid4()))
-        # create tmp_img_path
-        os.makedirs(tmp_img_path, exist_ok=True)
-
         for i, image in enumerate(all_images):
+            image_index = i + index_offset
+
             # get the score from the laion model
             laion_score = predict_score(image=image, feature_model=self.feature_model, predict_model=self.predict_model, feature_preprocess=self.feature_preprocess)
 
             # get the score from the dino model
-            dino_score, _, _ = self.object_detection.predict(image=image, prompt=search_prompt, index=i, img_path=tmp_img_path)
-
-            self.logger.info(f"SCORING IMAGE {i}: PROMPTS: {search_prompt} LAION: {laion_score} - DINO: {dino_score}")
+            dino_score, _, _ = self.object_detection.predict(image=image, prompt=search_prompt, index=image_index, img_path=image_path)
 
             # calculate the result score
             result_score = laion_score + dino_score
+
+            self.logger.info(f"SCORING IMAGE {image_index}: PROMPTS: {search_prompt} LAION: {round(laion_score, 3)} - DINO: {round(dino_score, 3)} - RESULT: {round(result_score, 3)}")
 
             result.append({
                 'laion': laion_score,
                 'dino': dino_score,
                 'result': result_score,
-                'index': i
+                'index': image_index
             })
 
-        self.logger.info(f"Results wrote to path: {tmp_img_path}")
-
-        # write result as json file to tmp_img_path
-        with open(os.path.join(tmp_img_path, "ratings.json"), "w") as file:
+        # write result as json file to image_path
+        with open(os.path.join(image_path, "ratings.json"), "w") as file:
             file.write(json.dumps(result))
 
         return result
 
+
+    # FUNCTIONS FOR MEMORY MANAGEMENT
 
     def unload_models(self, strategy: str = 'cpu'):
         if strategy == 'complete':
