@@ -1,7 +1,6 @@
 import os
 import io
 import json
-import gc
 import time
 import logging
 import zipfile
@@ -28,13 +27,9 @@ file_handler.setFormatter(formatter)
 
 # setup pipelines
 image_pipeline = ImagePipeline(cache_dir)
-text_pipeline = TextPipeline(cache_dir)
-
-# load an move to cpu => faster startup
 image_pipeline.load()
-# image_pipeline.to_cpu()
 
-# default: load text_pipeline on startup
+text_pipeline = TextPipeline(cache_dir)
 text_pipeline.load()
 
 @app.route('/api/images', methods=['POST'])
@@ -53,12 +48,9 @@ def image_endpoint():
     height = params.get('height', 512)
     num_inference_steps = params.get('num_inference_steps', 15)
     guidance_scale = params.get('guidance_scale', 9)
-    num_images_per_prompt = params.get('num_images_per_prompt', 10)
-
-    # # check, if text_pipeline is loaded
-    # if text_pipeline.is_loaded() == "cuda":
-    #     text_pipeline.to_cpu()
-    
+    num_images_per_prompt = params.get('num_images_per_prompt', 5)
+    amount_of_images = params.get('amount_of_images', 4)
+   
     # check, if image pipeline is loaded
     image_pipeline.load()
 
@@ -69,7 +61,8 @@ def image_endpoint():
                                                         width=width,
                                                         height=height,
                                                         num_inference_steps=num_inference_steps, guidance_scale=guidance_scale,
-                                                        num_images_per_prompt=num_images_per_prompt)
+                                                        num_images_per_prompt=num_images_per_prompt,
+                                                        amount_of_images=amount_of_images)
 
     if images_with_scores is None:
         app.logger.error(f"Error generating image.")
@@ -100,9 +93,6 @@ def image_endpoint():
     # clear VRAM
     torch.cuda.empty_cache()
 
-    # move back to cpu?
-    # image_pipeline.to_cpu()
-
     # Return ZIP file
     zip_data.seek(0)
     response = make_response(zip_data.read())
@@ -126,24 +116,13 @@ def transcribe_endpoint():
     if not file:
         return "No audio file provided", 400
 
-    # # move image_pipeline to cpu
-    # if image_pipeline.is_loaded() == "cuda":
-    #     image_pipeline.to_cpu()
-
-    # Only move whisper to cpu, keep all other models on gpu
-    
+    # check, if text pipeline is loaded
     text_pipeline.load()
 
     prompt, search_prompt = text_pipeline.transcribe(file)
 
     if prompt is None or search_prompt is None:
         return "Error generating text", 500
-
-    # # move to cpu
-    # text_pipeline.to_cpu()
-
-    # # load image pipeline
-    # image_pipeline.load()
 
     end_time = time.time()
     app.logger.info(f"Transcribe_Endpoint duration: {end_time - start_time} seconds")
@@ -158,11 +137,8 @@ def translate_endpoint():
     params = request.json
 
     text = params.get('text', None)
-
-    # # move image_pipeline to cpu
-    # if image_pipeline.is_loaded() == "cuda":
-    #     image_pipeline.to_cpu()
     
+    # check, if text pipeline is loaded
     text_pipeline.load()
 
     prompt, search_prompt = text_pipeline.translate(text)
@@ -170,23 +146,4 @@ def translate_endpoint():
     if prompt is None or search_prompt is None:
         return "Error translating text", 500
 
-    # # move to cpu
-    # text_pipeline.to_cpu()
-
-    # # load image pipeline
-    # image_pipeline.load()
-
     return jsonify({"prompt": prompt, "search_prompt": search_prompt})
-
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    app.logger.info("Health check")
-    return {"status": "UP"}, 200
-
-@app.route('/api/state', methods=['GET'])
-def get_state():
-    app.logger.info("Getting state")
-    return {"state": {
-        "image_pipeline": image_pipeline.is_loaded(),
-        "text_pipeline": text_pipeline.is_loaded()
-    }}, 200

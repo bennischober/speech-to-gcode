@@ -50,6 +50,7 @@ class TextPipeline:
 
         # set the loading state of the models
         self.loading_state = "unloaded"
+        self.logger.info("Text Pipeline initialized.")
 
     def load(self):
         # check, if models are already loaded on gpu/cpu
