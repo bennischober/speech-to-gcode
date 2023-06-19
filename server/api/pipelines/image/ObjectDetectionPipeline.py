@@ -68,6 +68,8 @@ class ObjectDetectionPipeline:
         Args:
             image (Image|ndarray): PIL Image or numpy array 
             prompt (str): The prompt to use for the prediction. Note, that the prompt might look like this: ```"chair . person . dog ."```
+            index (int): The index of the image in the batch.
+            img_path (str): The path to the image.
 
         Returns:
             Tuple[float, Tensor, List[str]]: The final rating value, logits and phrases for the given image and prompt.
@@ -98,8 +100,6 @@ class ObjectDetectionPipeline:
         # clear cache
         torch.cuda.empty_cache()
 
-        num_key_words = sum(noun in phrases for noun in nouns)
-
         # get the logits for the nouns
         result = {}
         for element, value in zip(phrases, logits):
@@ -110,9 +110,6 @@ class ObjectDetectionPipeline:
         final_score = 0.0
         for value in result.values():
             final_score += value
-
-        # multiply with number of key words
-        final_score *= num_key_words
 
         return final_score, logits, phrases
     
