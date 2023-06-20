@@ -91,10 +91,10 @@ def get_speech_to_text_component():
                 ),
             ]),
             dcc.Store('diffusion_prompt', data={'prompt': 'Ein Haus mit einem Pool',
-                                                'negative': ''}),
+                                                'negative': '', 'search_prompt': 'house . pool . '}),
             dcc.Store(id='input-prompts-store', storage_type='session',
                       data={'prompt': "Ein Haus mit einem Pool", 'type': 'text'}),
-            dcc.Store(id="search-prompt-store", storage_type="session"),
+            dcc.Store(id="search-prompt-store", storage_type="session", data="house . pool . "),
             dcc.Store(id="positive-all-prompts-store",
                       storage_type="session", data=POSITIVE_PROMPTS),
             dcc.Store(id="negative-all-prompts-store",
@@ -210,8 +210,8 @@ def toggle_icon(mic_click: int, text_input: str, current_class: str):
             is_recording = 'false'
             text_disabled = True
 
-            notification_header = "Recording Stopped"
-            notification_body = [html.P("Please wait while we process your recording...", className="mb-0")]
+            notification_header = "Spracheingabe wird verarbeitet"
+            notification_body = [html.P("Bitte warten Sie, während die Spracheingabe verarbeitet wird...", className="mb-0")]
             notification_icon = "info"
             notification_open = True
 
@@ -261,5 +261,5 @@ def toggle_recording(is_recording: str, text_input: str):
 )
 def update_response_notification(status: str):
     if status == "ok":
-        return "Response ok",  [html.P("Something", className="mb-0")], "success", True, 5000
+        return "Verarbeitung erfolgreich",  [html.P("Die Spracheingabe wurde erfolgreich verarbeitet. Bilder können generiert werden!", className="mb-0")], "success", True, 5000
     return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
