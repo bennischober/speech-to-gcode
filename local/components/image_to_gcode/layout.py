@@ -231,6 +231,10 @@ layout = dbc.Card(
                             dbc.Button("GCODE Kopieren", id="copy_gcode_button", color="primary", className="mr-2")
                         ]
                     ),
+                    html.Div([
+                            dbc.Button("GCODE Fräsen", id="mill_gcode_button", color="primary", className="mr-2")
+                        ]
+                    ),
                     dbc.Button("Hier Klicken, um den Code anzuzeigen", id="show_gcode_button", className="mt-3 show_gcode_button"),
                     dbc.Collapse([
                         html.H6("G-Code:"),
