@@ -86,7 +86,7 @@ def generateGCODE(contours, params):
     # GCODE für die Kontouren
     for i, edge_approx in enumerate(contours):
         gcode_lines += [
-            f'######## Contour {i+1} ########',
+            # f'######## Contour {i+1} ########',
             f'G00 X{edge_approx[0][0][0] * rf} Y{edge_approx[0][0][1] * rf}',
             # f'G00 Z{z_working_hight}' if i == 0 else None,
             f'G00 Z{params["z_zero_height"]}',
@@ -98,7 +98,7 @@ def generateGCODE(contours, params):
 
     # Fräßkopf zu initialer Position zurückbewegen
     gcode_lines += [
-        '######## End ########',
+        # '######## End ########',
         f'G00 Z{params["z_safe_hight"]}',
         'G00 X0 Y0',
         'M05',

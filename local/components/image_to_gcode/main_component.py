@@ -138,19 +138,18 @@ def copy_to_clipboard(gcode, n_clicks):
     Input("mill_gcode_button", "n_clicks")
 )
 def mill_gcode(gcode, n_clicks):
-    return n_clicks
     if n_clicks is not None and n_clicks > 0:
         app = Application()    # Kickstart the main application
         app.activate_gui(com_port=app.port_list)
-        app.controller_send_cmd('G0 X-300 Y-500')
+        app.controller_send_cmd('G0 X-250 Y-400')
         app.set_nullpunkt_XY()
-        app.controller_send_cmd('G0 Z-129')
+        app.controller_send_cmd('G0 Z-130')
         app.set_nullpunkt_Z()
         
-        app.start_file_execution(gcode)
-        
+        # app.start_file_execution(gcode.split('\n'))        
         # time.sleep(1)
         app.controller_send_cmd('$H')
+    return n_clicks
 
 @callback(
     Output("total_feeding_time", "children"),

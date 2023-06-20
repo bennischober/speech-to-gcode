@@ -1,4 +1,4 @@
-from grblsender import GRBLSender
+from components.image_to_gcode.milling_grbl.grblsender import GRBLSender
 
 class Controller:
     # DT - Estimated execution time of a single jog command in seconds
@@ -21,7 +21,7 @@ class Controller:
 
     def _write_grbl_settings(self) -> None:
         """Sends all config information to grbl"""
-        config = open("grbl.config")
+        config = open("components/image_to_gcode/milling_grbl/grbl.config")
 
         for configuration in config:
             self.send_cmd(configuration)

@@ -19,7 +19,7 @@ class GRBLSender:
         """
         self.serial = self.open_serial_port(com_port, baudrate)
         self.terminator_ok_or_error_regex = re.compile("^(ok|error|alarm|.msg:reset).*")
-        self.error_alarm_messages = {line[0]: [line[1], line[2]] for line in csv.reader(open('error_alarm.csv', encoding='UTF8'), delimiter=";")}
+        self.error_alarm_messages = {line[0]: [line[1], line[2]] for line in csv.reader(open('components/image_to_gcode/milling_grbl/error_alarm.CSV', encoding='UTF8'), delimiter=";")}
         self.lock = threading.Lock()
 
 

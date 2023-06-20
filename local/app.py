@@ -81,7 +81,6 @@ app.layout = html.Div(
                 get_stable_diffusion_component(),
                 get_image_preprocessing_component(),
                 get_image_to_gcode_component(),
-                FuturisticButtons(),
                 notifications()
             ],
             style={
