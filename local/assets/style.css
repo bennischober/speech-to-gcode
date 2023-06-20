@@ -38,6 +38,11 @@ h4 {
   margin: 5px 0 5px 0;
 }
 
+.gcode_controll_buttons {
+  width: 200px;
+  margin: 0 10px 0 10px;
+}
+
 .gcode_param_label {
   text-align: left;
   width: 100%;
