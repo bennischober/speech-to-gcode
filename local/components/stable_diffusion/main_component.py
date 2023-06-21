@@ -142,7 +142,7 @@ def generate_diff_images(diffusion_prompt: dict, n_clicks: int):
         "prompt": diffusion_prompt['prompt'],
         "negative_prompt": diffusion_prompt['negative'],
         "search_prompt": diffusion_prompt['search_prompt'],
-        #"num_inference_steps": 25
+        "num_inference_steps": 35
     }
 
     # Send the API request

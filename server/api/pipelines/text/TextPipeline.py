@@ -10,6 +10,8 @@ import librosa
 from lib.logger import get_logger
 
 
+# german whisper model: https://huggingface.co/bofenghuang/whisper-large-v2-cv11-german (german umlauts, etc.)
+
 class TextPipeline:
     def __init__(
             self,
@@ -108,7 +110,7 @@ class TextPipeline:
                 self.logger.info("Audio resampled to 16kHz")
 
             inputs = self.whisper_processor.feature_extractor(audio, return_tensors=self.return_tensors, sampling_rate=self.sampling_rate).input_features.to(self.device)
-            predicted_ids = self.whisper_model.generate(inputs, max_length=self.max_length)
+            predicted_ids = self.whisper_model.generate(inputs, max_length=self.max_length) # force german: , language="<|de|>", task="transcribe"
             generated_text = self.whisper_processor.batch_decode(predicted_ids, skip_special_tokens=self.skip_special_tokens, normalize=self.normalize)[0]
 
             self.logger.info("Text generated: %s", generated_text)

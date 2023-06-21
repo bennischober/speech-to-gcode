@@ -166,8 +166,8 @@ def create_diffusion_prompt(prompt: str, positive, negative, search_prompt: str)
     prompt.extend(positive)
 
     # map prompt and negative to whitespace separated string
-    prompt = " ".join(prompt)
-    negative = " ".join(negative)
+    prompt = ", ".join(prompt)
+    negative = ", ".join(negative)
 
     return {'prompt': prompt, 'negative': negative, 'search_prompt': search_prompt}
 

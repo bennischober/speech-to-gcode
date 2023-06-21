@@ -18,7 +18,7 @@ class ImagePipeline:
     def __init__(
             self,
             cache_dir: str,
-            sd_model_name: str = "runwayml/stable-diffusion-v1-5",
+            sd_model_name: str = "stabilityai/stable-diffusion-2-1-base", # "runwayml/stable-diffusion-v1-5",
             clip_model_name: str = "ViT-L-14",
             clip_pretrained_name: str = "openai",
             aesthetic_clip_model_name: str = "vit_l_14",
