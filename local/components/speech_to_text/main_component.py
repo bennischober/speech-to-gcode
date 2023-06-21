@@ -16,6 +16,7 @@ def get_speech_to_text_component():
             dbc.CardBody([
                 settings,
                 html.Div(id='recording-status', style={'display': 'none'}),
+                html.Div(id='response-status', style={'display': 'none'}),
                 dbc.Container(
                     [
                         dbc.Row(
@@ -90,10 +91,10 @@ def get_speech_to_text_component():
                 ),
             ]),
             dcc.Store('diffusion_prompt', data={'prompt': 'Ein Haus mit einem Pool',
-                                                'negative': ''}),
+                                                'negative': '', 'search_prompt': 'house . pool . '}),
             dcc.Store(id='input-prompts-store', storage_type='session',
                       data={'prompt': "Ein Haus mit einem Pool", 'type': 'text'}),
-            dcc.Store(id="search-prompt-store", storage_type="session"),
+            dcc.Store(id="search-prompt-store", storage_type="session", data="house . pool . "),
             dcc.Store(id="positive-all-prompts-store",
                       storage_type="session", data=POSITIVE_PROMPTS),
             dcc.Store(id="negative-all-prompts-store",
@@ -165,8 +166,8 @@ def create_diffusion_prompt(prompt: str, positive, negative, search_prompt: str)
     prompt.extend(positive)
 
     # map prompt and negative to whitespace separated string
-    prompt = " ".join(prompt)
-    negative = " ".join(negative)
+    prompt = ", ".join(prompt)
+    negative = ", ".join(negative)
 
     return {'prompt': prompt, 'negative': negative, 'search_prompt': search_prompt}
 
@@ -177,6 +178,10 @@ def create_diffusion_prompt(prompt: str, positive, negative, search_prompt: str)
     Output("toggle-button", "disabled"),
     Output("text-input", "disabled"),
     Output("recording-status", "children"),
+    Output('notification-toast', 'header'),
+    Output('notification-toast', 'children'),
+    Output('notification-toast', 'icon'),
+    Output('notification-toast', 'is_open'),
     Input('toggle-button', 'n_clicks'),
     Input("text-input", "value"),
     State('toggle-icon', 'className')
@@ -187,6 +192,11 @@ def toggle_icon(mic_click: int, text_input: str, current_class: str):
     mic_disabled = bool(text_input)
     is_recording = None
     text_disabled = False
+
+    notification_header = ""
+    notification_body = []
+    notification_icon = ""
+    notification_open = False
 
     text_dict = {'prompt': text_input, 'type': 'text'} if text_input else None
 
@@ -200,7 +210,13 @@ def toggle_icon(mic_click: int, text_input: str, current_class: str):
             is_recording = 'false'
             text_disabled = True
 
-    return text_dict or dash.no_update, new_class, recording_status, mic_disabled, text_disabled, is_recording or dash.no_update
+            notification_header = "Spracheingabe wird verarbeitet"
+            notification_body = [html.P("Bitte warten Sie, während die Spracheingabe verarbeitet wird...", className="mb-0")]
+            notification_icon = "info"
+            notification_open = True
+
+    return text_dict or dash.no_update, new_class, recording_status, mic_disabled, text_disabled, is_recording or dash.no_update, notification_header, notification_body, notification_icon, notification_open
+
 
 @callback(
     Output("input-prompts-store", "data", allow_duplicate=True),
@@ -208,6 +224,8 @@ def toggle_icon(mic_click: int, text_input: str, current_class: str):
     Output("current-prompt", "children", allow_duplicate=True),
     Output("toggle-button", "disabled", allow_duplicate=True),
     Output("text-input", "disabled", allow_duplicate=True),
+    Output('notification-toast', 'is_open', allow_duplicate=True),
+    Output('response-status', 'children', allow_duplicate=True),
     Input("recording-status", "children"),
     State("text-input", "value"),
     prevent_initial_call=True
@@ -217,6 +235,7 @@ def toggle_recording(is_recording: str, text_input: str):
     text_disabled = True
     search = None
     translated_text = None
+    status = None
 
     if is_recording == 'true':
         t = threading.Thread(
@@ -227,5 +246,20 @@ def toggle_recording(is_recording: str, text_input: str):
         text = {'prompt': text_response, 'type': 'audio'}
         translated_text = text_response
         text_disabled = False
+        status = 'ok'
 
-    return text or dash.no_update, search or dash.no_update, translated_text or dash.no_update, False, text_disabled
+    return text or dash.no_update, search or dash.no_update, translated_text or dash.no_update, False, text_disabled, False, status or dash.no_update
+
+@callback(
+    Output('notification-toast', 'header', allow_duplicate=True),
+    Output('notification-toast', 'children', allow_duplicate=True),
+    Output('notification-toast', 'icon', allow_duplicate=True),
+    Output('notification-toast', 'is_open', allow_duplicate=True),
+    Output('notification-toast', 'duration', allow_duplicate=True),
+    Input("response-status", "children"),
+    prevent_initial_call=True
+)
+def update_response_notification(status: str):
+    if status == "ok":
+        return "Verarbeitung erfolgreich",  [html.P("Die Spracheingabe wurde erfolgreich verarbeitet. Bilder können generiert werden!", className="mb-0")], "success", True, 5000
+    return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update

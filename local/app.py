@@ -6,6 +6,7 @@ from components.stable_diffusion.main_component import get_stable_diffusion_comp
 from components.image_preprocessing.main_component import get_image_preprocessing_component
 from components.image_to_gcode.main_component import get_image_to_gcode_component
 from components.controlling.main_component import FuturisticButtons
+from components.shared.Notification.main_component import notifications
 import matplotlib
 from utils.config import DEFAUL_GCODE_STATS, DYNAMIC_PARAMS
 
@@ -80,7 +81,7 @@ app.layout = html.Div(
                 get_stable_diffusion_component(),
                 get_image_preprocessing_component(),
                 get_image_to_gcode_component(),
-                FuturisticButtons(),
+                notifications()
             ],
             style={
                 'backgroundImage': f'linear-gradient(to bottom right, {colors["blue"]}, {colors["red"]})',

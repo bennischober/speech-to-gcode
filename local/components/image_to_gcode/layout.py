@@ -228,9 +228,16 @@ layout = dbc.Card(
                 ], style={'display': 'flex'}),
                 html.Div([
                     html.Div([
-                            dbc.Button("GCODE Kopieren", id="copy_gcode_button", color="primary", className="mr-2")
-                        ]
-                    ),
+                        html.Div([
+                                dbc.Button("GCODE Kopieren", id="copy_gcode_button", className='gcode_controll_buttons', color="primary")
+                            ]
+                        ),
+                        html.Div([
+                                dbc.Button("GCODE Fräsen", id="mill_gcode_button", className='gcode_controll_buttons', color="primary")
+                            ]
+                        ),
+                    ], 
+                    style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center'}),
                     dbc.Button("Hier Klicken, um den Code anzuzeigen", id="show_gcode_button", className="mt-3 show_gcode_button"),
                     dbc.Collapse([
                         html.H6("G-Code:"),
