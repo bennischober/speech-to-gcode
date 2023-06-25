@@ -1,4 +1,4 @@
-from dash import callback, no_update
+from dash import callback
 
 from dash.dependencies import Input, Output, State
 import numpy as np
@@ -75,6 +75,7 @@ def toggle_collapse(n_clicks, params_is_open, stats_is_open):
 def changeDynamicParams(epsilon, gcode_size, min_contour_len, blurr_kernel_size, z_safe_hight, 
                         z_working_hight, z_zero_height, z_feed_height, z_feed, xy_feed, spindle_speed, 
                         g0_feed):
+
     return {
         'epsilon': epsilon,
         'gcode_size': gcode_size,
@@ -87,10 +88,8 @@ def changeDynamicParams(epsilon, gcode_size, min_contour_len, blurr_kernel_size,
         'z_feed': z_feed,
         'xy_feed': xy_feed,
         'spindle_speed': spindle_speed,
-        'g0_feed': g0_feed,
+        'g0_feed': g0_feed
     }
-
-
 
 @callback(
     Output('gcode_store', 'data'),

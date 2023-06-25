@@ -3,38 +3,7 @@ import cv2
 from scipy.spatial.distance import cdist
 from components.image_to_gcode.gcode_stats import get_gcode_stats
 from utils.config import FIXED_PARAMS
-
-def getDynamicEpsilon(contour, epsilon_factor, max_epsilon, min_epsilon):
-       # Area könnte auch verwendet werden
-       epsilon_tmp = epsilon_factor * cv2.arcLength(contour, True)
-       
-       if epsilon_tmp <= max_epsilon and epsilon_tmp >= min_epsilon:
-              return epsilon_tmp
-       elif epsilon_tmp > max_epsilon:
-              return max_epsilon
-       elif epsilon_tmp < min_epsilon:
-              return min_epsilon
-       
-def getEdgeApprox(edge_image, params):
-       contours, _ = cv2.findContours(edge_image, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-       edge_approximations = []
-
-       for contour in contours:
-            if len(contour) < params['min_contour_len']:
-                continue
-
-            # epsilon = fixed_epsilon if use_dynamic_epsilon == False else getDynamicEpsilon(contour, epsilon_factor, max_epsilon, min_epsilon)
-
-            # Der Parameter False ist Wichtig, dadurch sind die Eckpunkte in der gleichen Reihenfolge wie die Kontur
-            edge_approx = cv2.approxPolyDP(contour, params['epsilon'], False)
-            
-            # remove last element if it is already in contour
-            if edge_approx[-1] in edge_approx[:len(edge_approx)-2]:
-                edge_approx = edge_approx[:-1]
-            
-            edge_approximations.append(edge_approx)
-       
-       return edge_approximations
+from components.image_to_gcode.edge_approximation import getContourApproxDeduplicated, getEdgeApproxBasic
 
 def getContourStartPoint(contours):
     contour_start_points = []
@@ -113,7 +82,7 @@ def image_to_gcode(edge_image, params):
     flipped_image = cv2.flip(edge_image, 0)
 
     # Edge Approximation
-    edges_approx_contours = getEdgeApprox(flipped_image, params)
+    edges_approx_contours = getEdgeApproxBasic(flipped_image, params)
 
     # Shortest Path
     ordered_contours = optimize_contour_order(edges_approx_contours, params)
