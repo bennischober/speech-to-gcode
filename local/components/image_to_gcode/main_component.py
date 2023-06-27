@@ -145,7 +145,7 @@ def mill_gcode(gcode, n_clicks):
         app.controller_send_cmd('G0 Z-130')
         app.set_nullpunkt_Z()
         
-        # app.start_file_execution(gcode.split('\n'))        
+        app.start_file_execution(gcode.split('\n'))        
         # time.sleep(1)
         app.controller_send_cmd('$H')
     return n_clicks
