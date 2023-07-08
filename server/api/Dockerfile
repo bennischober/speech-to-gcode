@@ -15,6 +15,7 @@ ENV CUDA_HOME /usr/local/cuda-11.7/
 ENV IMAGE_DIR = /images
 
 # Update the repository sources list and install dependencies
+# THESE ARE FOR GROUNDINGDINO!
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     software-properties-common && \
@@ -28,6 +29,7 @@ RUN apt-get update && \
     libgl1-mesa-glx \
     libsndfile1
 
+# THESE ARE THE ESSENTIAL PACKAGES
 # Install necessary python packages
 RUN pip install --upgrade diffusers \
     transformers \
@@ -40,6 +42,9 @@ RUN pip install --upgrade diffusers \
     -U flask-cors \
     cython pycocotools ninja \
     accelerate sacremoses
+
+
+# This step is necessary to use GROUNDINGDINO!
 
 # Install dependencies for building custom C++ ops
 RUN apt-get update && \
@@ -54,6 +59,8 @@ RUN git clone https://github.com/IDEA-Research/GroundingDINO.git
 
 WORKDIR /usr/app/src/GroundingDINO
 RUN pip install -e .
+
+# GroundingDINO step ends here
 
 WORKDIR /usr/app/src
 
