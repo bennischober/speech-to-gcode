@@ -1,6 +1,7 @@
 import numpy as np
 from utils.config import FIXED_PARAMS
 
+# Calculate the g0 distance
 def calculate_g0_distance(contours, params):
     # calc resize factor
     rf = params['gcode_size'] / FIXED_PARAMS['image_size']
@@ -19,6 +20,7 @@ def calculate_g0_distance(contours, params):
 
     return total_distance
 
+# calculate the g1 distance
 def calculate_g1_distance(contours, params):
     # calc resize factor
     rf = params['gcode_size'] / FIXED_PARAMS['image_size']
@@ -35,6 +37,7 @@ def calculate_g1_distance(contours, params):
 
     return total_distance
 
+# calculate the z distance
 def calculate_z_distance(contours, params):
     g0_z_distance = params['z_safe_hight'] - params['z_working_hight'] + (params['z_working_hight'] - params['z_zero_height']) * 2 * len(contours)
     g1_z_distance = (params['z_zero_height'] - params['z_feed_height']) * len(contours)
@@ -50,6 +53,7 @@ def convert_min_to_time(minutes):
 
     return f'{total_time_hours:02d}:{total_time_minutes:02d}:{remaining_seconds:02d}'
 
+# generate the gcode statistics
 def get_gcode_stats(contours, gcode, params):
     g0_xy_distance = calculate_g0_distance(contours, params)
     g1_xy_distance = calculate_g1_distance(contours, params)

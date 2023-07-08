@@ -53,17 +53,17 @@ def process_image(params, selected_diff_image, _):
         original_base64 = base64.b64encode(origial_encoded).decode('utf-8')
 
 
-        # Graustufenbild
+        # grayscale image
         gray = cv2.cvtColor(origial, cv2.COLOR_BGR2GRAY)
         _, gray_encoded = cv2.imencode('.png', gray)
         gray_base64 = base64.b64encode(gray_encoded).decode('utf-8')
 
-        # Rauschen eliminieren
+        # eliminate noise
         blurred =  cv2.GaussianBlur(gray, (params['blurr_kernel_size'], params['blurr_kernel_size']), 0)
         _, blurred_encoded = cv2.imencode('.png', blurred)
         blurred_base64 = base64.b64encode(blurred_encoded).decode('utf-8')
 
-        # Canny-Kanten-Detektor
+        # Canny edge detector
         edges = cv2.Canny(blurred, 100, 200)
         _, edges_encoded = cv2.imencode('.png', edges)
         edges_base64 = base64.b64encode(edges_encoded).decode('utf-8')

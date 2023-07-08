@@ -12,6 +12,8 @@ from components.image_to_gcode.converter import image_to_gcode
 from components.image_to_gcode.layout import layout
 from components.image_to_gcode.milling_grbl.studenten import Application
 
+# This file loades the GCODE generator layout and defines all callbacks
+
 def get_image_to_gcode_component():
     return layout
 

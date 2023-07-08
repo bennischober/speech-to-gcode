@@ -1,18 +1,6 @@
 import cv2
 import numpy as np
 
-# Not implemented yet
-def getDynamicEpsilon(contour, epsilon_factor, max_epsilon, min_epsilon):
-       # Area könnte auch verwendet werden
-       epsilon_tmp = epsilon_factor * cv2.arcLength(contour, True)
-       
-       if epsilon_tmp <= max_epsilon and epsilon_tmp >= min_epsilon:
-              return epsilon_tmp
-       elif epsilon_tmp > max_epsilon:
-              return max_epsilon
-       elif epsilon_tmp < min_epsilon:
-              return min_epsilon
-
 # Normal Edge Approximation
 def getEdgeApproxBasic(edge_image, params):
        contours, _ = cv2.findContours(edge_image, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -23,12 +11,13 @@ def getEdgeApproxBasic(edge_image, params):
             if len(contour) < params['min_contour_len']:
                 continue
 
+            # Dynamic Epsilon
             # epsilon = fixed_epsilon if use_dynamic_epsilon == False else getDynamicEpsilon(contour, epsilon_factor, max_epsilon, min_epsilon)
 
-            # Der Parameter False ist Wichtig, dadurch sind die Eckpunkte in der gleichen Reihenfolge wie die Kontur
+            # The False parameter is important, so the vertices are in the same order as the contour
             edge_approx = cv2.approxPolyDP(contour, params['epsilon'], False)
             
-            # remove last element if it is already in contour
+            # Remove last element if it is already in contour
             if edge_approx[-1] in edge_approx[:len(edge_approx)-2]:
                 edge_approx = edge_approx[:-1]
             
@@ -36,6 +25,18 @@ def getEdgeApproxBasic(edge_image, params):
        
        return edge_approximations
 
+# --------------------- Not implemented yet ------------------------
+
+# Not implemented yet
+def getDynamicEpsilon(contour, epsilon_factor, max_epsilon, min_epsilon):
+       epsilon_tmp = epsilon_factor * cv2.arcLength(contour, True)
+       
+       if epsilon_tmp <= max_epsilon and epsilon_tmp >= min_epsilon:
+              return epsilon_tmp
+       elif epsilon_tmp > max_epsilon:
+              return max_epsilon
+       elif epsilon_tmp < min_epsilon:
+              return min_epsilon
 
 # Deduplicated Edge Approximation (Not implemented yet)
 def dropDuplicateContours(segment, feed_points):
@@ -113,8 +114,6 @@ def getContourApproxDeduplicated(edge_image, params):
             else:
                 closest_index = min((x for x in indexes if x >= rescent_index), default=None, key=lambda x: abs(x - rescent_index))
                 index = closest_index if closest_index != None else min((x for x in indexes if x >= 0 or x == 0), default=None, key=lambda x: abs(x - 0))
-
-
 
             # Get the contour points of the segment
             segment_contour_points = None

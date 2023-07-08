@@ -1,6 +1,8 @@
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 
+# This layout vaiable contains the whole layout of the GCODE component
+
 layout = dbc.Card(
         children=[
             dbc.CardHeader('Image to GCode'),

@@ -5,6 +5,8 @@ from components.image_to_gcode.gcode_stats import get_gcode_stats
 from utils.config import FIXED_PARAMS
 from components.image_to_gcode.edge_approximation import getContourApproxDeduplicated, getEdgeApproxBasic
 
+# The converter.py converts the edge image to the gcode
+
 def getContourStartPoint(contours):
     contour_start_points = []
     contour_mapping = []
@@ -17,7 +19,7 @@ def getContourStartPoint(contours):
 
     return np.array(contour_start_points), np.array(contour_mapping)
 
-# Shortest Path
+# Shortest Path k-nearest-neighbor
 def optimize_contour_order(contours, params):
     contour_start_points, contour_mapping = getContourStartPoint(contours) 
 
@@ -46,13 +48,13 @@ def generateGCODE(contours, params):
 
     gcode_lines = []
 
-    # Drehgeschwindigkeit und initiale Höhe festlegen
+    # Set spindle speed and initial altitude
     gcode_lines += [
         f'M03 S{params["spindle_speed"]}', 
         f'G00 Z{params["z_safe_hight"]}'
     ]
 
-    # GCODE für die Kontouren
+    # GCODE for contours
     for i, edge_approx in enumerate(contours):
         gcode_lines += [
             # f'######## Contour {i+1} ########',
@@ -65,7 +67,7 @@ def generateGCODE(contours, params):
             f'G00 Z{params["z_working_hight"]}'
         ]
 
-    # Fräßkopf zu initialer Position zurückbewegen
+    # Move the milling head back to the initial position
     gcode_lines += [
         # '######## End ########',
         f'G00 Z{params["z_safe_hight"]}',
@@ -74,7 +76,7 @@ def generateGCODE(contours, params):
         'M30'
     ]
 
-    # None Elemente entfernen und GCODE erstellen
+    # Remove None elements and create GCODE
     return gcode_lines
 
 def image_to_gcode(edge_image, params):
@@ -91,7 +93,7 @@ def image_to_gcode(edge_image, params):
     gcode_lines = generateGCODE(ordered_contours, params)
     gcode = '\n'.join([line for line in gcode_lines if line != None])
 
-    # Total feeding time
+    # Get GCODE statistics
     gcode_stats = get_gcode_stats(ordered_contours, gcode_lines, params)
     return gcode, ordered_contours, gcode_stats
 
