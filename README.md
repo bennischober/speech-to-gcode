@@ -1,6 +1,6 @@
 # Speech-To-GCode
 
-This project was developed during our master studies at the [Kempten University of Applied Sciences](https://www.hs-kempten.de/en/) in cooperation with the [Institute for Data-optimised Manufacturing](https://www.hs-kempten.de/en/research/research-institutes/institute-for-data-optimized-manufacturing-idf).
+This project was developed during our master studies at the [Kempten University of Applied Sciences](https://www.hs-kempten.de/en/) in cooperation with the [Institute for Data-optimised Manufacturing (IDF)](https://www.hs-kempten.de/en/research/research-institutes/institute-for-data-optimized-manufacturing-idf).
 
 **Project members**: Linus Göhl, Quirin Sandt, Benjamin Schober
 
@@ -55,3 +55,18 @@ Since the pipeline is accessed through a REST API, all the functional parts are 
 ### Image preprocessing and GCode generation
 
 Note: This pipeline component is not deployed within a Docker container, it is running on the local machine.
+
+## Code Documentation
+
+Most parts of the code is documented through comments. Here are some key concepts of the project:
+
+- [``server``](./server): Contains the REST API and the pipeline components
+- [``local``](./local): Contains the local pipeline components (image preprocessing and GCode generation) and the UI
+
+The image pipeline is seperated into different files. Besides the main file [``image_pipeline.py``](./local/image_pipeline.py), there are other files. This is because the main class would be to big and hard to read. Also, the ObjectDetection pipeline is seperated into a different file, which works like a wraper around the GroundingDINO model.
+
+Another thing to mention, is that all code within the [``milling_grbl``](./local/components/image_to_gcode/milling_grbl/) folder was provided by the [IDF](https://www.hs-kempten.de/en/research/research-institutes/institute-for-data-optimized-manufacturing-idf).
+
+## Getting Started
+
+To get started using this project, check the [``getting-started.md``](./getting-started.md) file.
