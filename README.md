@@ -1,6 +1,8 @@
 # Speech-To-GCode
 
-This project was developed during our master studies at the [Kempten University of Applied Sciences](https://www.hs-kempten.de/en/) in cooperation with the [Institute for Data-optimised Manufacturing](https://www.hs-kempten.de/en/research/research-institutes/institute-for-data-optimized-manufacturing-idf). Members of this project: Linus Göhl, Quirin Sandt, Benjamin Schober
+This project was developed during our master studies at the [Kempten University of Applied Sciences](https://www.hs-kempten.de/en/) in cooperation with the [Institute for Data-optimised Manufacturing](https://www.hs-kempten.de/en/research/research-institutes/institute-for-data-optimized-manufacturing-idf).
+
+**Project members**: Linus Göhl, Quirin Sandt, Benjamin Schober
 
 ## Introduction
 
