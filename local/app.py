@@ -8,6 +8,8 @@ from components.image_to_gcode.main_component import get_image_to_gcode_componen
 from components.controlling.main_component import FuturisticButtons
 from components.shared.Notification.main_component import notifications
 import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot
 from utils.config import DEFAUL_GCODE_STATS, DYNAMIC_PARAMS
 
 # Load Icons
@@ -95,7 +97,3 @@ app.layout = html.Div(
         'backgroundColor': colors['background']
     }
 )
-
-if __name__ == '__main__':
-    # is needed for gcode image
-    matplotlib.use('Agg')
