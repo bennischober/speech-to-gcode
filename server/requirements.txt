@@ -30,7 +30,7 @@ numba==0.57.0
 numpy==1.24.1
 open-clip-torch==2.20.0
 packaging==23.1
-Pillow==10.0.1
+Pillow==10.2.0
 pooch==1.6.0
 protobuf==3.20.3
 pycparser==2.21
